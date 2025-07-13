@@ -13,7 +13,7 @@ export interface Loan {
   loanAmount: number;
   installments: number;
   nextPayment: string;
-  status: 'Active' | 'Inactive';
+  status: 'Active' | 'Inactive' | 'Overdue';
   phone?: string;
 }
 
@@ -24,7 +24,7 @@ export interface Member {
   totalLoanAmount: number;
   paidTotal: number;
   membershipDuration: string;
-  status: 'Active' | 'Inactive';
+  status: 'Active' | 'Inactive' | 'Completed';
 }
 
 export interface Withdrawal {

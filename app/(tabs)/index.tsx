@@ -1,12 +1,12 @@
-
+import { verifyOwner } from "@/axios/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  Alert,
-  Dimensions,
+  ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -14,38 +14,50 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
-const { width, height } = Dimensions.get("window");
-
 const LoginScreen = () => {
-  const passsignup = ()=>{
-  router.push('/signup')
-}
-  const [email, setEmail] = useState("JyoPrash");
+  const [email, setEmail] = useState("prashmn17@gmail.com");
   const [password, setPassword] = useState("1234");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
 
-  const handleLogin = () => {
+  const passsignup = () => {
+    router.push("/signup");
+  };
 
-
+  const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+      setModalMessage("Please fill in all fields");
+      setModalVisible(true);
       return;
     }
-    // Handle login logic here
-    console.log("Login attempt:", { email, password });
-    Alert.alert("Success", "Login functionality would be implemented here");
-  };
 
-  const handleSocialLogin = (provider: any) => {
-    Alert.alert(`Social Login ${provider} login would be implemented here`);
-  };
+    try {
+      setLoading(true);
+      const resp = await verifyOwner({ email, password });
+      setLoading(false);
 
-  const mydashboard = () => {
-    router.push("/main/app");
+      if (resp?.success) {
+        setModalMessage("Login successful!");
+        setModalVisible(true);
+        setTimeout(() => {
+          setModalVisible(false);
+          router.push("/main");
+        }, 1500);
+      } else {
+        setModalMessage(resp?.message || "Login failed. Try again.");
+        setModalVisible(true);
+      }
+    } catch (error) {
+      setLoading(false);
+      setModalMessage("Something went wrong. Please try again later.");
+      setModalVisible(true);
+    }
   };
 
   return (
@@ -64,7 +76,6 @@ const LoginScreen = () => {
             contentContainerStyle={styles.scrollContainer}
             showsVerticalScrollIndicator={false}
           >
-            {/* Header */}
             <View style={styles.header}>
               <View style={styles.logoContainer}>
                 <Ionicons name="lock-closed" size={32} color="#fff" />
@@ -75,9 +86,7 @@ const LoginScreen = () => {
               </Text>
             </View>
 
-            {/* Login Form */}
             <View style={styles.formContainer}>
-              {/* Email Input */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Email Address</Text>
                 <View style={styles.inputWrapper}>
@@ -100,7 +109,6 @@ const LoginScreen = () => {
                 </View>
               </View>
 
-              {/* Password Input */}
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Password</Text>
                 <View style={styles.inputWrapper}>
@@ -133,7 +141,6 @@ const LoginScreen = () => {
                 </View>
               </View>
 
-              {/* Remember Me & Forgot Password */}
               <View style={styles.optionsContainer}>
                 <TouchableOpacity
                   style={styles.rememberContainer}
@@ -156,10 +163,10 @@ const LoginScreen = () => {
                 </TouchableOpacity>
               </View>
 
-              {/* Login Button */}
               <TouchableOpacity
                 style={styles.loginButton}
                 onPress={handleLogin}
+                disabled={loading}
               >
                 <LinearGradient
                   colors={["#667eea", "#764ba2"]}
@@ -167,21 +174,22 @@ const LoginScreen = () => {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
-                  <Text style={styles.loginButtonText} onPress={mydashboard}>
-                    Sign In
-                  </Text>
+                  {loading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.loginButtonText}>Sign In</Text>
+                  )}
                 </LinearGradient>
               </TouchableOpacity>
-              {/* Sign Up Link */}
+
               <View style={styles.signupContainer}>
-                <Text style={styles.signupText}>Dont have an account? </Text>
-                <TouchableOpacity>
-                  <Text style={styles.signupLink} onPress={passsignup}>Sign up here</Text>
+                <Text style={styles.signupText}>Don't have an account? </Text>
+                <TouchableOpacity onPress={passsignup}>
+                  <Text style={styles.signupLink}>Sign up here</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Footer */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>
                 By signing in, you agree to our{" "}
@@ -192,11 +200,30 @@ const LoginScreen = () => {
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
+
+        {/* Custom Alert Modal */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalMessage}>{modalMessage}</Text>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </LinearGradient>
     </SafeAreaView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -403,232 +430,35 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
   },
+   modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    backgroundColor: "#fff",
+    padding: 24,
+    borderRadius: 16,
+    alignItems: "center",
+    width: "80%",
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: "#111",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  modalButton: {
+    backgroundColor: "#667eea",
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
+  },
 });
 export default LoginScreen;
-
-
-
-// import React from "react";
-// import {
-//   View,
-//   Text,
-//   TouchableOpacity,
-//   StyleSheet,
-//   SafeAreaView,
-//   StatusBar,
-//   Dimensions,
-// } from "react-native";
-// import { Ionicons } from "@expo/vector-icons";
-// import { LinearGradient } from "expo-linear-gradient";
-// import { router } from "expo-router";
-
-// const { width, height } = Dimensions.get("window");
-
-// export default function App() {
-//   const scedule = () => {
-//     router.push("/sceduleDemo");
-//   };
-//   const loginpage = () => {
-//     router.push("/login");
-//   };
-//   return (
-//     <SafeAreaView style={styles.container}>
-//       <StatusBar barStyle="light-content" backgroundColor="#000000" />
-
-//       {/* Header/Navigation */}
-//       <View style={styles.header}>
-//         <View style={styles.logo}>
-//           <View style={styles.logoIcon}>
-//             <Ionicons name="shield-checkmark" size={24} color="#4F46E5" />
-//           </View>
-//           <Text style={styles.logoText}>EvoXcel</Text>
-//         </View>
-
-//         <View style={styles.navigation}>
-//           <TouchableOpacity style={styles.loginButton} onPress={loginpage}>
-//             <Text style={styles.loginText}>Login</Text>
-//           </TouchableOpacity>
-
-//           <TouchableOpacity style={styles.demoButton}>
-//             <LinearGradient
-//               colors={["#4F46E5", "#7C3AED"]}
-//               start={{ x: 0, y: 0 }}
-//               end={{ x: 1, y: 0 }}
-//               style={styles.demoButtonGradient}
-//             >
-//               <Text style={styles.demoButtonText} onPress={scedule}>
-//                 Schedule Demo
-//               </Text>
-//             </LinearGradient>
-//           </TouchableOpacity>
-//         </View>
-//       </View>
-
-//       {/* Main Content */}
-//       <View style={styles.mainContent}>
-//         <View style={styles.heroSection}>
-//           {/* Gradient Heading */}
-//           <View style={styles.headingContainer}>
-//             <LinearGradient
-//               colors={["#3B82F6", "#8B5CF6", "#EC4899"]}
-//               start={{ x: 0, y: 0 }}
-//               end={{ x: 1, y: 0 }}
-//               style={styles.gradientText}
-//             >
-//               <Text style={styles.heading}>Secure & Transparent</Text>
-//             </LinearGradient>
-//             <LinearGradient
-//               colors={["#3B82F6", "#8B5CF6", "#EC4899"]}
-//               start={{ x: 0, y: 0 }}
-//               end={{ x: 1, y: 0 }}
-//               style={styles.gradientText}
-//             >
-//               <Text style={styles.heading}>Chit Fund Management</Text>
-//             </LinearGradient>
-//           </View>
-
-//           {/* Subtitle */}
-//           <Text style={styles.subtitle}>
-//             Streamline your chit fund operations with our comprehensive
-//             platform. Manage members, track payments, and grow your business
-//             with ease.
-//           </Text>
-
-//           {/* CTA Button */}
-//           <TouchableOpacity style={styles.ctaButton}>
-//             <LinearGradient
-//               colors={["#4F46E5", "#7C3AED"]}
-//               start={{ x: 0, y: 0 }}
-//               end={{ x: 1, y: 0 }}
-//               style={styles.ctaButtonGradient}
-//             >
-//               <Text style={styles.ctaButtonText} onPress={scedule}>
-//                 Schedule Demo
-//               </Text>
-//               <Ionicons
-//                 name="arrow-forward"
-//                 size={20}
-//                 color="#FFFFFF"
-//                 style={styles.ctaArrow}
-//               />
-//             </LinearGradient>
-//           </TouchableOpacity>
-//         </View>
-//       </View>
-//     </SafeAreaView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: "#000000",
-//   },
-//   header: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//     paddingHorizontal: 20,
-//     paddingVertical: 16,
-//     borderBottomWidth: 1,
-//     borderBottomColor: "#1F1F1F",
-//   },
-//   logo: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//   },
-//   logoIcon: {
-//     marginRight: 8,
-//   },
-//   logoText: {
-//     fontSize: 20,
-//     fontWeight: "700",
-//     color: "#FFFFFF",
-//   },
-//   navigation: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//   },
-//   loginButton: {
-//     marginRight: 16,
-//     paddingVertical: 8,
-//     paddingHorizontal: 16,
-//   },
-//   loginText: {
-//     color: "#FFFFFF",
-//     fontSize: 16,
-//     fontWeight: "500",
-//   },
-//   demoButton: {
-//     borderRadius: 8,
-//     overflow: "hidden",
-//   },
-//   demoButtonGradient: {
-//     paddingVertical: 10,
-//     paddingHorizontal: 20,
-//   },
-//   demoButtonText: {
-//     color: "#FFFFFF",
-//     fontSize: 16,
-//     fontWeight: "600",
-//   },
-//   mainContent: {
-//     flex: 1,
-//     justifyContent: "center",
-//     alignItems: "center",
-//     paddingHorizontal: 20,
-//   },
-//   heroSection: {
-//     alignItems: "center",
-//     maxWidth: width * 0.9,
-//   },
-//   headingContainer: {
-//     alignItems: "center",
-//     marginBottom: 24,
-//   },
-//   gradientText: {
-//     borderRadius: 4,
-//   },
-//   heading: {
-//     fontSize: width > 400 ? 48 : 36,
-//     fontWeight: "800",
-//     textAlign: "center",
-//     color: "white",
-//     lineHeight: width > 400 ? 56 : 42,
-//   },
-//   subtitle: {
-//     fontSize: 18,
-//     color: "#9CA3AF",
-//     textAlign: "center",
-//     lineHeight: 28,
-//     marginBottom: 40,
-//     maxWidth: width * 0.8,
-//   },
-//   ctaButton: {
-//     borderRadius: 12,
-//     overflow: "hidden",
-//     elevation: 4,
-//     shadowColor: "#4F46E5",
-//     shadowOffset: {
-//       width: 0,
-//       height: 4,
-//     },
-//     shadowOpacity: 0.3,
-//     shadowRadius: 8,
-//   },
-//   ctaButtonGradient: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     paddingVertical: 16,
-//     paddingHorizontal: 32,
-//   },
-//   ctaButtonText: {
-//     color: "#FFFFFF",
-//     fontSize: 18,
-//     fontWeight: "600",
-//   },
-//   ctaArrow: {
-//     marginLeft: 8,
-//   },
-// });
-

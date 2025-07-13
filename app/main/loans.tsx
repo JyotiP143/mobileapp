@@ -1,74 +1,132 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Header } from '../../components/header';
-import { Pagination } from '../../components/pagination';
-import { SearchAndControls } from '../../components/searchandcontrols';
-import { Loan } from '../../types/index';
+"use client"
+
+import { Pagination } from "@/components/pagination"
+import type React from "react"
+import { useState } from "react"
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { Header } from "../../components/header"
+import { SearchAndControls } from "../../components/searchandcontrols"
+import type { Loan } from "../../types/index"
 const mockLoans: Loan[] = [
   {
-    id: '1',
-    name: 'Prashant',
-    customerId: 'CUST-1001',
-    loanId: 'LN-1001',
+    id: "1",
+    name: "Prashant",
+    customerId: "CUST-1001",
+    loanId: "LN-1001",
     loanAmount: 6000,
     installments: 6,
-    nextPayment: '11 May 2025',
-    status: 'Active',
-    phone: '7624821788',
+    nextPayment: "11 May 2025",
+    status: "Active",
+    phone: "7624821788",
   },
   {
-    id: '2',
-    name: 'Prashant',
-    customerId: 'CUST-1001',
-    loanId: 'LN-1002',
+    id: "2",
+    name: "Prashant",
+    customerId: "CUST-1001",
+    loanId: "LN-1002",
     loanAmount: 4000,
     installments: 3,
-    nextPayment: '25 Jun 2025',
-    status: 'Active',
-    phone: '7624821788',
+    nextPayment: "25 Jun 2025",
+    status: "Active",
+    phone: "7624821788",
   },
-];
+  {
+    id: "3",
+    name: "Rajesh Kumar",
+    customerId: "CUST-1002",
+    loanId: "LN-1003",
+    loanAmount: 8500,
+    installments: 12,
+    nextPayment: "15 May 2025",
+    status: "Overdue",
+    phone: "9876543210",
+  },
+  {
+    id: "4",
+    name: "Anita Sharma",
+    customerId: "CUST-1003",
+    loanId: "LN-1004",
+    loanAmount: 12000,
+    installments: 8,
+    nextPayment: "20 May 2025",
+    status: "Active",
+    phone: "8765432109",
+  },
+  
+]
 
 export const LoansScreen: React.FC = () => {
-  const [searchValue, setSearchValue] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [filterStatus, setFilterStatus] = useState('All');
-  const entriesPerPage = 25;
+  const [searchValue, setSearchValue] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [filterStatus, setFilterStatus] = useState("All")
+  const entriesPerPage = 10
 
   const handleAddLoan = () => {
-    console.log('Add Loan pressed');
-  };
+    console.log("Add Loan pressed")
+  }
 
   const handleExport = () => {
-    console.log('Export pressed');
-  };
+    console.log("Export pressed")
+  }
 
   const handleFilterPress = () => {
-    console.log('Filter pressed');
-  };
+    console.log("Filter pressed")
+  }
 
   const handlePayPress = (loanId: string) => {
-    console.log('Pay pressed for loan:', loanId);
-  };
+    console.log("Pay pressed for loan:", loanId)
+  }
 
-  const filteredLoans = mockLoans.filter(loan =>
-    loan.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    loan.loanId.toLowerCase().includes(searchValue.toLowerCase()) ||
-    loan.customerId.toLowerCase().includes(searchValue.toLowerCase())
-  );
+  const handleCardPress = (loan: Loan) => {
+    console.log("Card pressed for loan:", loan.loanId)
+  }
 
-  const totalPages = Math.ceil(filteredLoans.length / entriesPerPage);
+  const filteredLoans = mockLoans.filter(
+    (loan) =>
+      loan.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      loan.loanId.toLowerCase().includes(searchValue.toLowerCase()) ||
+      loan.customerId.toLowerCase().includes(searchValue.toLowerCase()),
+  )
+
+  const totalPages = Math.ceil(filteredLoans.length / entriesPerPage)
+  const startIndex = (currentPage - 1) * entriesPerPage
+  const paginatedLoans = filteredLoans.slice(startIndex, startIndex + entriesPerPage)
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "active":
+        return "#10B981"
+      case "overdue":
+        return "#EF4444"
+      case "completed":
+        return "#6B7280"
+      default:
+        return "#F59E0B"
+    }
+  }
+
+  const getStatusBgColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "active":
+        return "#ECFDF5"
+      case "overdue":
+        return "#FEF2F2"
+      case "completed":
+        return "#F9FAFB"
+      default:
+        return "#FFFBEB"
+    }
+  }
+
+  const calculateNextPaymentAmount = (loanAmount: number, installments: number) => {
+    return Math.round(loanAmount / installments)
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header
-        title="Loans"
-        icon="card"
-        buttonText="Add Loan"
-        onButtonPress={handleAddLoan}
-      />
-      
+      <Header title="Loans" icon="card" buttonText="Add Loan" onButtonPress={handleAddLoan} />
+
       <SearchAndControls
         searchValue={searchValue}
         onSearchChange={setSearchValue}
@@ -78,217 +136,339 @@ export const LoansScreen: React.FC = () => {
         total={filteredLoans.length}
         onExport={handleExport}
       />
-
-      <View style={styles.tableContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.table}>
-            <View style={styles.tableHeader}>
-              <TouchableOpacity style={styles.checkbox} />
-              <Text style={[styles.headerText, styles.nameColumn]}>NAME</Text>
-              <Text style={[styles.headerText, styles.customerIdColumn]}>CUSTOMER ID</Text>
-              <Text style={[styles.headerText, styles.loanIdColumn]}>LOAN ID</Text>
-              <Text style={[styles.headerText, styles.loanAmountColumn]}>LOAN AMOUNT</Text>
-              <Text style={[styles.headerText, styles.installmentsColumn]}>INSTALLMENTS</Text>
-              <Text style={[styles.headerText, styles.nextPaymentColumn]}>NEXT PAYMENT</Text>
-              <Text style={[styles.headerText, styles.statusColumn]}>STATUS</Text>
-              <Text style={[styles.headerText, styles.actionsColumn]}>ACTIONS</Text>
+<ScrollView
+        style={styles.cardsContainer}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.cardsContent}
+      >
+        {paginatedLoans.map((loan) => (
+          <TouchableOpacity
+            key={loan.id}
+            style={styles.loanCard}
+            onPress={() => handleCardPress(loan)}
+            activeOpacity={0.7}
+          >
+            {/* Card Header */}
+            <View style={styles.cardHeader}>
+              <View style={styles.customerInfo}>
+                <Text style={styles.customerName}>{loan.name}</Text>
+                <Text style={styles.customerId}>ID: {loan.customerId}</Text>
+              </View>
+              <View style={[styles.statusBadge, { backgroundColor: getStatusBgColor(loan.status) }]}>
+                <Text style={[styles.statusText, { color: getStatusColor(loan.status) }]}>{loan.status}</Text>
+              </View>
             </View>
 
-            <ScrollView style={styles.tableBody}>
-              {filteredLoans.map((loan) => (
-                <View key={loan.id} style={styles.tableRow}>
-                  <TouchableOpacity style={styles.checkbox} />
-                  <View style={styles.nameColumn}>
-                    <Text style={styles.nameText}>{loan.name}</Text>
-                    {loan.phone && <Text style={styles.phoneText}>📞 {loan.phone}</Text>}
-                  </View>
-                  <Text style={[styles.cellText, styles.customerIdColumn]}>👤 {loan.customerId}</Text>
-                  <Text style={[styles.cellText, styles.loanIdColumn]}>{loan.loanId}</Text>
-                  <Text style={[styles.cellText, styles.loanAmountColumn]}>₹ {loan.loanAmount.toLocaleString()}</Text>
-                  <View style={styles.installmentsColumn}>
-                    <View style={styles.installmentsBadge}>
-                      <Text style={styles.installmentsText}>🔶 {loan.installments}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.nextPaymentColumn}>
-                    <Text style={styles.paymentAmount}>₹ 1000.00</Text>
-                    <Text style={styles.paymentDate}>{loan.nextPayment}</Text>
-                  </View>
-                  <View style={styles.statusColumn}>
-                    <View style={styles.dueBadge}>
-                      <Text style={styles.dueText}>Due</Text>
-                    </View>
-                    <View style={styles.activeBadge}>
-                      <Text style={styles.activeText}>Active</Text>
-                    </View>
-                  </View>
-                  <View style={styles.actionsColumn}>
-                    <TouchableOpacity 
-                      style={styles.payButton}
-                      onPress={() => handlePayPress(loan.loanId)}
-                    >
-                      <Text style={styles.payButtonText}>💳 Pay</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        </ScrollView>
-      </View>
+            {/* Loan Amount Section */}
+            <View style={styles.amountSection}>
+              <View style={styles.loanAmountContainer}>
+                <Text style={styles.amountLabel}>Loan Amount</Text>
+                <Text style={styles.loanAmount}>₹{loan.loanAmount.toLocaleString()}</Text>
+              </View>
+              <View style={styles.loanIdContainer}>
+                <Text style={styles.loanIdLabel}>Loan ID</Text>
+                <Text style={styles.loanId}>{loan.loanId}</Text>
+              </View>
+            </View>
 
-      <Pagination
+            {/* Payment Details */}
+            <View style={styles.paymentSection}>
+              <View style={styles.nextPaymentContainer}>
+                <Text style={styles.nextPaymentLabel}>Next Payment</Text>
+                <Text style={styles.nextPaymentAmount}>
+                  ₹{calculateNextPaymentAmount(loan.loanAmount, loan.installments).toLocaleString()}
+                </Text>
+                <Text style={styles.nextPaymentDate}>{loan.nextPayment}</Text>
+              </View>
+              <View style={styles.installmentsContainer}>
+                <Text style={styles.installmentsLabel}>Installments</Text>
+                <View style={styles.installmentsBadge}>
+                  <Text style={styles.installmentsCount}>{loan.installments}</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Contact & Actions */}
+            <View style={styles.cardFooter}>
+              <View style={styles.contactInfo}>
+                <Text style={styles.phoneIcon}>📞</Text>
+                <Text style={styles.phoneNumber}>{loan.phone}</Text>
+              </View>
+              <TouchableOpacity style={styles.payButton} onPress={() => handlePayPress(loan.loanId)}>
+                <Text style={styles.payButtonIcon}>💳</Text>
+                <Text style={styles.payButtonText}>Pay Now</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Progress Indicator */}
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <View style={[styles.progressFill, { width: `${(loan.installments / 12) * 100}%` }]} />
+              </View>
+              <Text style={styles.progressText}>{loan.installments} of 12 installments</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+
+        {paginatedLoans.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateIcon}>💳</Text>
+            <Text style={styles.emptyStateTitle}>No loans found</Text>
+            <Text style={styles.emptyStateText}>Try adjusting your search or filter criteria</Text>
+          </View>
+        )}
+      </ScrollView>
+      
+
+<View style={styles.pagination}>
+
+  <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
         totalEntries={filteredLoans.length}
         entriesPerPage={entriesPerPage}
         onPageChange={setCurrentPage}
       />
+</View>
     </SafeAreaView>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: "#0F172A",
+  
   },
-  tableContainer: {
+  cardsContainer: {
     flex: 1,
-    backgroundColor: '#2a2a2a',
-    margin: 20,
-    borderRadius: 8,
-  },
-  table: {
-    minWidth: 1200,
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#404040',
   },
-  tableBody: {
-    flex: 1,
+  cardsContent: {
+    paddingBottom: 20,
   },
-  tableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-  },
-  checkbox: {
-    width: 16,
-    height: 16,
+  loanCard: {
+    backgroundColor: "#1E293B",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#666',
-    borderRadius: 2,
-    marginRight: 16,
+    borderColor: "#334155",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  headerText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 16,
   },
-  cellText: {
-    color: '#fff',
+  customerInfo: {
+    flex: 1,
+  },
+  customerName: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#F8FAFC",
+    marginBottom: 4,
+  },
+  customerId: {
     fontSize: 14,
+    color: "#94A3B8",
+    fontWeight: "500",
   },
-  nameColumn: {
-    width: 120,
-  },
-  nameText: {
-    color: '#4285f4',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  phoneText: {
-    color: '#888',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  customerIdColumn: {
-    width: 120,
-  },
-  loanIdColumn: {
-    width: 100,
-  },
-  loanAmountColumn: {
-    width: 120,
-  },
-  installmentsColumn: {
-    width: 120,
-    alignItems: 'center',
-  },
-  installmentsBadge: {
-    backgroundColor: '#ff6b35',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  installmentsText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  nextPaymentColumn: {
-    width: 120,
-  },
-  paymentAmount: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  paymentDate: {
-    color: '#888',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  statusColumn: {
-    width: 100,
-    gap: 4,
-  },
-  dueBadge: {
-    backgroundColor: '#dc3545',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-  },
-  dueText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '500',
-  },
-  activeBadge: {
-    backgroundColor: '#ffc107',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-  },
-  activeText: {
-    color: '#000',
-    fontSize: 10,
-    fontWeight: '500',
-  },
-  actionsColumn: {
-    width: 80,
-  },
-  payButton: {
-    backgroundColor: '#4285f4',
+  statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 4,
+    borderRadius: 20,
+    marginLeft: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  amountSection: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#334155",
+  },
+  loanAmountContainer: {
+    flex: 1,
+  },
+  amountLabel: {
+    fontSize: 12,
+    color: "#94A3B8",
+    marginBottom: 4,
+    textTransform: "uppercase",
+    fontWeight: "500",
+  },
+  loanAmount: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#3B82F6",
+  },
+  loanIdContainer: {
+    alignItems: "flex-end",
+  },
+  loanIdLabel: {
+    fontSize: 12,
+    color: "#94A3B8",
+    marginBottom: 4,
+    textTransform: "uppercase",
+    fontWeight: "500",
+  },
+  loanId: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#F8FAFC",
+  },
+  paymentSection: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  nextPaymentContainer: {
+    flex: 1,
+  },
+  nextPaymentLabel: {
+    fontSize: 12,
+    color: "#94A3B8",
+    marginBottom: 4,
+    textTransform: "uppercase",
+    fontWeight: "500",
+  },
+  nextPaymentAmount: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#10B981",
+    marginBottom: 2,
+  },
+  nextPaymentDate: {
+    fontSize: 13,
+    color: "#94A3B8",
+    fontWeight: "500",
+  },
+  installmentsContainer: {
+    alignItems: "center",
+  },
+  installmentsLabel: {
+    fontSize: 12,
+    color: "#94A3B8",
+    marginBottom: 8,
+    textTransform: "uppercase",
+    fontWeight: "500",
+  },
+  installmentsBadge: {
+    backgroundColor: "#F59E0B",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    minWidth: 50,
+    alignItems: "center",
+  },
+  installmentsCount: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  contactInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  phoneIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  phoneNumber: {
+    fontSize: 14,
+    color: "#94A3B8",
+    fontWeight: "500",
+  },
+  payButton: {
+    backgroundColor: "#3B82F6",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    shadowColor: "#3B82F6",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  payButtonIcon: {
+    fontSize: 16,
+    marginRight: 8,
   },
   payButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
   },
-});
+  progressContainer: {
+    marginTop: 4,
+  },
+  progressBar: {
+    height: 4,
+    backgroundColor: "#334155",
+    borderRadius: 2,
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#10B981",
+    borderRadius: 2,
+  },
+  progressText: {
+    fontSize: 12,
+    color: "#94A3B8",
+    textAlign: "center",
+    fontWeight: "500",
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+  },
+  emptyStateIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#F8FAFC",
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: "#94A3B8",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  pagination:{
+  flexDirection:"column",
+  justifyContent:"space-between", 
+
+  }
+})

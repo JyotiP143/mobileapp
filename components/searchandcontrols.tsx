@@ -61,9 +61,10 @@ export const SearchAndControls: React.FC<SearchAndControlsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap:10,
     paddingHorizontal: 20,
     paddingVertical: 16,
     backgroundColor: '#2a2a2a',
@@ -72,6 +73,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    paddingHorizontal: 20,
   },
   filterButton: {
     flexDirection: 'row',
@@ -92,7 +94,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#404040',
     borderRadius: 6,
     paddingHorizontal: 12,
-    width: 300,
+    width: 200,
   },
   searchIcon: {
     marginRight: 8,

@@ -1,9 +1,10 @@
 import { Stack } from "expo-router";
 import React from "react";
-export default function TabLayout() {
+const TabLayout = ()=>  {
   return (
-<Stack>
+<Stack screenOptions={{headerShown: false}}>
       <Stack.Screen name="index" />
     </Stack>
   );
 }
+export default TabLayout;
