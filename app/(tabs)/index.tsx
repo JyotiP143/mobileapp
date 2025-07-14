@@ -1,4 +1,5 @@
 import { verifyOwner } from "@/axios/auth";
+import { storeToken } from "@/utils/authToken";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -45,10 +46,11 @@ const LoginScreen = () => {
       if (resp?.success) {
         setModalMessage("Login successful!");
         setModalVisible(true);
+         await storeToken('7632hbhsahsbhbahy38e68777@h8huh98*uhuhuhu@!@Y!@hbhshvsadsvdgsvdfsgdvsvhscgaskxsuxAYUJIUaigyugYU');
         setTimeout(() => {
           setModalVisible(false);
           router.push("/main");
-        }, 1500);
+        }, 1000);
       } else {
         setModalMessage(resp?.message || "Login failed. Try again.");
         setModalVisible(true);
@@ -183,7 +185,7 @@ const LoginScreen = () => {
               </TouchableOpacity>
 
               <View style={styles.signupContainer}>
-                <Text style={styles.signupText}>Don't have an account? </Text>
+                <Text style={styles.signupText}>Dont have an account? </Text>
                 <TouchableOpacity onPress={passsignup}>
                   <Text style={styles.signupLink}>Sign up here</Text>
                 </TouchableOpacity>

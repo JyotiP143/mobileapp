@@ -17,7 +17,7 @@ export const InvestmentProvider = ({ children} :any) => {
       setError(null);
 
       try {
-        const response = await fetch(`/api/userControll/${userData.id}`, {
+        const response = await fetch(`https://finance.evoxcel.com/api/userControll/${userData.id}`, {
           method: "GET",
         });
 

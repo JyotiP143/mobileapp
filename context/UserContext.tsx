@@ -1,10 +1,11 @@
 "use client";
+import { getToken } from "@/utils/authToken";
 import React, {
-    createContext,
-    ReactNode,
-    useContext,
-    useEffect,
-    useState,
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
 } from "react";
 import { loadLoanData } from "./../axios/loanApi";
 import { updateImage, userDetails } from "./../axios/profile";
@@ -75,40 +76,55 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [ownerisLoading, setOwnerIsLoading] = useState(true);
   const [imageLoading, setImageLoading] = useState(false);
 
-  const fetchUserData = async () => {
-    try {
-      const response = await fetch("/api/auth/session", {
-        credentials: "include",
-      });
 
-      if (!response.ok) {
-        console.warn("Failed to fetch user data. Status:", response.status);
-        setUserData(initialData);
-        return;
-      }
+const fetchUserData = async () => {
+  try {
+    const token = await getToken();
 
-      const data = await response.json();
-
-      if (data?.success && data?.user) {
-        setUserData({
-          id: data.user.id ?? null,
-          email: data.user.email ?? null,
-          name: data.user.name ?? null,
-          companyName: data.user.companyName ?? null,
-          phone: data.user.phone ?? null,
-          joinDate: data.user.joinDate ?? null,
-          location: data.user.location ?? null,
-          filter: data.user.filter ?? "all",
-        });
-      } else {
-        setUserData(initialData);
-      }
-    } catch (error) {
+    if (!token) {
       setUserData(initialData);
-    } finally {
-      setIsLoading(false);
+      return;
     }
-  };
+
+    const response = await fetch("https://finance.evoxcel.com/api/auth/session", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`, // ⬅ sending token manually
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      console.warn("Failed to fetch user data. Status:", response.status);
+      setUserData(initialData);
+      return;
+    }
+
+    const data = await response.json();
+console.log("hiiihiihih----",data)
+    if (data?.success && data?.user) {
+      setUserData({
+        id: data.user.id ?? null,
+        email: data.user.email ?? null,
+        name: data.user.name ?? null,
+        companyName: data.user.companyName ?? null,
+        phone: data.user.phone ?? null,
+        joinDate: data.user.joinDate ?? null,
+        location: data.user.location ?? null,
+        filter: data.user.filter ?? "all",
+      });
+    } else {
+      setUserData(initialData);
+    }
+  } catch (error) {
+    console.warn("Error fetching user data", error);
+    setUserData(initialData);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const fetchLoanData = async () => {
     try {
@@ -164,7 +180,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const logoutUser = async () => {
     try {
-      const response = await fetch("/api/auth/logout", {
+      const response = await fetch("https://finance.evoxcel.com/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
