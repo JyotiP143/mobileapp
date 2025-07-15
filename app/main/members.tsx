@@ -57,7 +57,7 @@ const mockMembers: Member[] = [
   },
 ]
 
-export const MembersScreen: React.FC = () => {
+ const MembersScreen = () => {
   const [searchValue, setSearchValue] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [filterStatus, setFilterStatus] = useState("All Status")
@@ -570,3 +570,5 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 })
+
+export default MembersScreen ;

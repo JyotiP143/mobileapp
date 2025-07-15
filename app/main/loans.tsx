@@ -56,7 +56,7 @@ const mockLoans: Loan[] = [
   
 ]
 
-export const LoansScreen: React.FC = () => {
+const LoansScreen = () => {
   const [searchValue, setSearchValue] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [filterStatus, setFilterStatus] = useState("All")
@@ -472,3 +472,5 @@ const styles = StyleSheet.create({
 
   }
 })
+
+export default LoansScreen;

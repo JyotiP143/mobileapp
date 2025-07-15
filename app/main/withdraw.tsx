@@ -48,7 +48,7 @@ const mockWithdrawals: Withdrawal[] = [
   },
 ]
 
-export const WithdrawnScreen: React.FC = () => {
+const WithdrawnScreen = () => {
   const [searchValue, setSearchValue] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const entriesPerPage = 10
@@ -494,3 +494,5 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 })
+
+export default WithdrawnScreen ;

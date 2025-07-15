@@ -48,7 +48,7 @@ const mockInvestments: Investment[] = [
   },
 ]
 
-export const InvestmentScreen: React.FC = () => {
+const InvestmentScreen= () => {
   const [searchValue, setSearchValue] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const entriesPerPage = 10
@@ -434,3 +434,5 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 })
+
+export default InvestmentScreen;
