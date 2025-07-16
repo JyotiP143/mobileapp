@@ -6,11 +6,11 @@ import { PieChartCard } from "@/components/analytics/PieChart"
 import { FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import { useEffect, useState } from "react"
-import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native"
+import { ScrollView, StyleSheet, Text, View } from "react-native"
 import { useInvestment } from "./../../context/InvestmentContext"
 import { useUser } from "./../../context/UserContext"
 
-const { width } = Dimensions.get("window")
+// const { width } = Dimensions.get("window")
 
 export default function Dashboard() {
   const { investmentData, loading } = useInvestment()
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   statCard: {
-    width: width < 768 ? (width - 48) / 2 : (width - 80) / 3,
+    // width: width < 768 ? (width - 48) / 2 : (width - 80) / 3,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#3f3f46",

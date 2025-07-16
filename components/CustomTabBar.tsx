@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons"; // You can switch to MaterialIcons or FontAwesome
+import { Ionicons } from "@expo/vector-icons";
 import { usePathname, useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -8,16 +8,16 @@ const tabs = [
   { name: "Investment", route: "/main/investment", icon: "trending-up-outline", activeIcon: "trending-up" },
   { name: "Loans", route: "/main/loans", icon: "cash-outline", activeIcon: "cash" },
   { name: "Members", route: "/main/members", icon: "people-outline", activeIcon: "people" },
-  { name: "Withdraw", route: "/", icon: "wallet-outline", activeIcon: "wallet" },
+  { name: "Withdraw", route: "/main/withdraw", icon: "wallet-outline", activeIcon: "wallet" },
 ];
 
-export const CustomTabBar = () => {
+ const CustomTabBar = () => {
   const router = useRouter();
   const pathname = usePathname();
 
   return (
     <View style={styles.tabBar}>
-      {tabs.map((tab) => {
+      {tabs.map((tab :any) => {
         const isActive = pathname === tab.route;
         return (
           <TouchableOpacity
@@ -69,3 +69,4 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
 });
+export default CustomTabBar;

@@ -1,93 +1,333 @@
 "use client"
-
 import { Pagination } from "@/components/pagination"
-import type React from "react"
-import { useState } from "react"
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { useCallback, useEffect, useState } from "react"
+import {
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { addLoanDetails, deleteLoans, loadLoanData, skipedEmi, updateEmi, updateUserLoan } from "../../axios/loanApi"
 import { Header } from "../../components/header"
+import { LoadingSpinner } from "../../components/loanErrormsg/loadingSpinner"
 import { SearchAndControls } from "../../components/searchandcontrols"
 import type { Loan } from "../../types/index"
-const mockLoans: Loan[] = [
-  {
-    id: "1",
-    name: "Prashant",
-    customerId: "CUST-1001",
-    loanId: "LN-1001",
-    loanAmount: 6000,
-    installments: 6,
-    nextPayment: "11 May 2025",
-    status: "Active",
-    phone: "7624821788",
-  },
-  {
-    id: "2",
-    name: "Prashant",
-    customerId: "CUST-1001",
-    loanId: "LN-1002",
-    loanAmount: 4000,
-    installments: 3,
-    nextPayment: "25 Jun 2025",
-    status: "Active",
-    phone: "7624821788",
-  },
-  {
-    id: "3",
-    name: "Rajesh Kumar",
-    customerId: "CUST-1002",
-    loanId: "LN-1003",
-    loanAmount: 8500,
-    installments: 12,
-    nextPayment: "15 May 2025",
-    status: "Overdue",
-    phone: "9876543210",
-  },
-  {
-    id: "4",
-    name: "Anita Sharma",
-    customerId: "CUST-1003",
-    loanId: "LN-1004",
-    loanAmount: 12000,
-    installments: 8,
-    nextPayment: "20 May 2025",
-    status: "Active",
-    phone: "8765432109",
-  },
-  
-]
 
 const LoansScreen = () => {
+  const [loans, setLoans] = useState()
   const [searchValue, setSearchValue] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [filterStatus, setFilterStatus] = useState("All")
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [processingLoanId, setProcessingLoanId] = useState<string | null>(null)
+
   const entriesPerPage = 10
 
+  // Mock data fallback when API fails or returns no data
+  const mockLoans: Loan[] = [
+    {
+      id: "1",
+      name: "Prashant",
+      customerId: "CUST-1001",
+      loanId: "LN-1001",
+      loanAmount: 6000,
+      installments: 6,
+      nextPayment: "11 May 2025",
+      status: "Active",
+      phone: "7624821788",
+    },
+    {
+      id: "2",
+      name: "Prashant",
+      customerId: "CUST-1001",
+      loanId: "LN-1002",
+      loanAmount: 4000,
+      installments: 3,
+      nextPayment: "25 Jun 2025",
+      status: "Active",
+      phone: "7624821788",
+    },
+    {
+      id: "3",
+      name: "Rajesh Kumar",
+      customerId: "CUST-1002",
+      loanId: "LN-1003",
+      loanAmount: 8500,
+      installments: 12,
+      nextPayment: "15 May 2025",
+      status: "Overdue",
+      phone: "9876543210",
+    },
+    {
+      id: "4",
+      name: "Anita Sharma",
+      customerId: "CUST-1003",
+      loanId: "LN-1004",
+      loanAmount: 12000,
+      installments: 8,
+      nextPayment: "20 May 2025",
+      status: "Active",
+      phone: "8765432109",
+    },
+  ]
+
+  // Load loans data
+  const fetchLoans = useCallback(async (showLoader = true) => {
+    try {
+      if (showLoader) setLoading(true)
+      setError(null)
+
+      // Replace 'user-id' with actual user ID from your auth context
+      const response = await loadLoanData("user-id")
+
+      if (response && Array.isArray(response)) {
+        setLoans(response)
+      } else if (response && response.loans && Array.isArray(response.loans)) {
+        setLoans(response.loans)
+      } else {
+        // Use mock data if API doesn't return proper data
+        console.log("Using mock data - API response:", response)
+        setLoans(mockLoans)
+      }
+    } catch (err) {
+      console.error("Error fetching loans:", err)
+      // Use mock data on error
+      setLoans(mockLoans)
+      setError("Using offline data. Please check your connection.")
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [])
+
+  // Initial load
+  useEffect(() => {
+    fetchLoans()
+  }, [fetchLoans])
+
+  // Refresh handler
+  const onRefresh = useCallback(() => {
+    setRefreshing(true)
+    fetchLoans(false)
+  }, [fetchLoans])
+
   const handleAddLoan = () => {
-    console.log("Add Loan pressed")
+    // Example of how to use addLoanDetails
+    const newLoanInfo = {
+      name: "New Customer",
+      customerId: "CUST-NEW",
+      loanAmount: 10000,
+      installments: 12,
+      phone: "1234567890",
+      // Add other required fields
+    }
+
+    Alert.alert("Add Loan", "Navigate to add loan form or call addLoanDetails API", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Add Sample Loan",
+        onPress: async () => {
+          try {
+            const response = await addLoanDetails(newLoanInfo)
+            console.log("Add loan response:", response)
+            if (response) {
+              Alert.alert("Success", "Loan added successfully!")
+              fetchLoans(false) // Refresh data
+            }
+          } catch (error) {
+            console.error("Add loan error:", error)
+            Alert.alert("Error", "Failed to add loan. Please try again.")
+          }
+        },
+      },
+    ])
   }
 
   const handleExport = () => {
-    console.log("Export pressed")
+    console.log("Export loans data")
+    Alert.alert("Export", "Export functionality will be implemented here")
   }
 
   const handleFilterPress = () => {
-    console.log("Filter pressed")
+    const statusOptions = ["All", "Active", "Overdue", "Completed"]
+    Alert.alert(
+      "Filter by Status",
+      "Choose status to filter:",
+      statusOptions.map((status) => ({
+        text: status,
+        onPress: () => setFilterStatus(status),
+      })),
+    )
   }
 
-  const handlePayPress = (loanId: string) => {
-    console.log("Pay pressed for loan:", loanId)
+  const handlePayPress = async (loanId: string) => {
+    try {
+      setProcessingLoanId(loanId)
+
+      Alert.alert("Process Payment", "Choose payment action:", [
+        {
+          text: "Cancel",
+          style: "cancel",
+          onPress: () => setProcessingLoanId(null),
+        },
+        {
+          text: "Pay EMI",
+          onPress: async () => {
+            try {
+              const emiData = {
+                loanId,
+                paymentDate: new Date().toISOString(),
+                amount: calculateNextPaymentAmount(
+                  loans.find((l) => l.loanId === loanId)?.loanAmount || 0,
+                  loans.find((l) => l.loanId === loanId)?.installments || 1,
+                ),
+                // Add other required fields
+              }
+
+              const response = await updateEmi(emiData)
+              console.log("Update EMI response:", response)
+
+              if (response) {
+                Alert.alert("Success", "EMI payment processed successfully!")
+                fetchLoans(false) // Refresh data
+              } else {
+                Alert.alert("Error", "Failed to process payment. Please try again.")
+              }
+            } catch (error) {
+              console.error("Payment error:", error)
+              Alert.alert("Error", "Payment processing failed. Please try again.")
+            } finally {
+              setProcessingLoanId(null)
+            }
+          },
+        },
+        {
+          text: "Skip EMI",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const emiData = {
+                loanId,
+                skipDate: new Date().toISOString(),
+                reason: "User requested skip",
+                // Add other required fields
+              }
+
+              const response = await skipedEmi(emiData)
+              console.log("Skip EMI response:", response)
+
+              if (response) {
+                Alert.alert("Success", "EMI skipped successfully!")
+                fetchLoans(false) // Refresh data
+              } else {
+                Alert.alert("Error", "Failed to skip EMI. Please try again.")
+              }
+            } catch (error) {
+              console.error("Skip EMI error:", error)
+              Alert.alert("Error", "Failed to skip EMI. Please try again.")
+            } finally {
+              setProcessingLoanId(null)
+            }
+          },
+        },
+      ])
+    } catch (error) {
+      console.error("Error in handlePayPress:", error)
+      setProcessingLoanId(null)
+    }
   }
 
   const handleCardPress = (loan: Loan) => {
-    console.log("Card pressed for loan:", loan.loanId)
+    // Navigate to loan details screen or show loan details
+    Alert.alert(
+      "Loan Details",
+      `Loan ID: ${loan.loanId}\nCustomer: ${loan.name}\nAmount: ₹${loan.loanAmount.toLocaleString()}`,
+      [
+        {
+          text: "Close",
+          style: "cancel",
+        },
+        {
+          text: "Edit Loan",
+          onPress: async () => {
+            try {
+              const updatedLoanData = {
+                loanId: loan.loanId,
+                // Add fields you want to update
+                lastModified: new Date().toISOString(),
+              }
+
+              const response = await updateUserLoan(updatedLoanData)
+              console.log("Update loan response:", response)
+
+              if (response) {
+                Alert.alert("Success", "Loan updated successfully!")
+                fetchLoans(false) // Refresh data
+              }
+            } catch (error) {
+              console.error("Update loan error:", error)
+              Alert.alert("Error", "Failed to update loan. Please try again.")
+            }
+          },
+        },
+      ],
+    )
   }
 
-  const filteredLoans = mockLoans.filter(
-    (loan) =>
+  const handleDeleteLoan = async (loanId: string) => {
+    Alert.alert("Delete Loan", "Are you sure you want to delete this loan? This action cannot be undone.", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            setProcessingLoanId(loanId)
+
+            const response = await deleteLoans([loanId])
+            console.log("Delete loan response:", response)
+
+            if (response) {
+              Alert.alert("Success", "Loan deleted successfully!")
+              fetchLoans(false) // Refresh data
+            } else {
+              Alert.alert("Error", "Failed to delete loan. Please try again.")
+            }
+          } catch (error) {
+            console.error("Delete error:", error)
+            Alert.alert("Error", "Failed to delete loan. Please try again.")
+          } finally {
+            setProcessingLoanId(null)
+          }
+        },
+      },
+    ])
+  }
+
+  // Filter loans based on search and status
+  const filteredLoans = loans.filter((loan) => {
+    const matchesSearch =
       loan.name.toLowerCase().includes(searchValue.toLowerCase()) ||
       loan.loanId.toLowerCase().includes(searchValue.toLowerCase()) ||
-      loan.customerId.toLowerCase().includes(searchValue.toLowerCase()),
-  )
+      loan.customerId.toLowerCase().includes(searchValue.toLowerCase())
+
+    const matchesStatus = filterStatus === "All" || loan.status === filterStatus
+
+    return matchesSearch && matchesStatus
+  })
 
   const totalPages = Math.ceil(filteredLoans.length / entriesPerPage)
   const startIndex = (currentPage - 1) * entriesPerPage
@@ -123,6 +363,16 @@ const LoansScreen = () => {
     return Math.round(loanAmount / installments)
   }
 
+  // Loading state
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Header title="Loans" icon="card" buttonText="Add Loan" onButtonPress={handleAddLoan} />
+        <LoadingSpinner />
+      </SafeAreaView>
+    )
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <Header title="Loans" icon="card" buttonText="Add Loan" onButtonPress={handleAddLoan} />
@@ -136,10 +386,20 @@ const LoansScreen = () => {
         total={filteredLoans.length}
         onExport={handleExport}
       />
-<ScrollView
+
+      {error && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
+
+      <ScrollView
         style={styles.cardsContainer}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.cardsContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" colors={["#3B82F6"]} />
+        }
       >
         {paginatedLoans.map((loan) => (
           <TouchableOpacity
@@ -154,8 +414,17 @@ const LoansScreen = () => {
                 <Text style={styles.customerName}>{loan.name}</Text>
                 <Text style={styles.customerId}>ID: {loan.customerId}</Text>
               </View>
-              <View style={[styles.statusBadge, { backgroundColor: getStatusBgColor(loan.status) }]}>
-                <Text style={[styles.statusText, { color: getStatusColor(loan.status) }]}>{loan.status}</Text>
+              <View style={styles.headerActions}>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusBgColor(loan.status) }]}>
+                  <Text style={[styles.statusText, { color: getStatusColor(loan.status) }]}>{loan.status}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDeleteLoan(loan.loanId)}
+                  disabled={processingLoanId === loan.loanId}
+                >
+                  <Text style={styles.deleteButtonText}>🗑️</Text>
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -194,9 +463,19 @@ const LoansScreen = () => {
                 <Text style={styles.phoneIcon}>📞</Text>
                 <Text style={styles.phoneNumber}>{loan.phone}</Text>
               </View>
-              <TouchableOpacity style={styles.payButton} onPress={() => handlePayPress(loan.loanId)}>
-                <Text style={styles.payButtonIcon}>💳</Text>
-                <Text style={styles.payButtonText}>Pay Now</Text>
+              <TouchableOpacity
+                style={[styles.payButton, processingLoanId === loan.loanId && styles.payButtonDisabled]}
+                onPress={() => handlePayPress(loan.loanId)}
+                disabled={processingLoanId === loan.loanId}
+              >
+                {processingLoanId === loan.loanId ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Text style={styles.payButtonIcon}>💳</Text>
+                    <Text style={styles.payButtonText}>Pay Now</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
 
@@ -210,26 +489,35 @@ const LoansScreen = () => {
           </TouchableOpacity>
         ))}
 
-        {paginatedLoans.length === 0 && (
+        {paginatedLoans.length === 0 && !loading && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateIcon}>💳</Text>
             <Text style={styles.emptyStateTitle}>No loans found</Text>
-            <Text style={styles.emptyStateText}>Try adjusting your search or filter criteria</Text>
+            <Text style={styles.emptyStateText}>
+              {searchValue || filterStatus !== "All"
+                ? "Try adjusting your search or filter criteria"
+                : "Get started by adding your first loan"}
+            </Text>
+            {!searchValue && filterStatus === "All" && (
+              <TouchableOpacity style={styles.addLoanButton} onPress={handleAddLoan}>
+                <Text style={styles.addLoanButtonText}>Add Your First Loan</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </ScrollView>
-      
 
-<View style={styles.pagination}>
-
-  <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalEntries={filteredLoans.length}
-        entriesPerPage={entriesPerPage}
-        onPageChange={setCurrentPage}
-      />
-</View>
+      {totalPages > 1 && (
+        <View style={styles.pagination}>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalEntries={filteredLoans.length}
+            entriesPerPage={entriesPerPage}
+            onPageChange={setCurrentPage}
+          />
+        </View>
+      )}
     </SafeAreaView>
   )
 }
@@ -238,7 +526,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#0F172A",
-  
+  },
+  errorBanner: {
+    backgroundColor: "#FEF2F2",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: "#EF4444",
+  },
+  errorText: {
+    color: "#DC2626",
+    fontSize: 14,
+    fontWeight: "500",
   },
   cardsContainer: {
     flex: 1,
@@ -283,16 +585,28 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
     fontWeight: "500",
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    marginLeft: 12,
   },
   statusText: {
     fontSize: 12,
     fontWeight: "600",
     textTransform: "uppercase",
+  },
+  deleteButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "#374151",
+  },
+  deleteButtonText: {
+    fontSize: 16,
   },
   amountSection: {
     flexDirection: "row",
@@ -415,6 +729,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 3,
+    minWidth: 100,
+    justifyContent: "center",
+  },
+  payButtonDisabled: {
+    backgroundColor: "#6B7280",
+    shadowOpacity: 0,
   },
   payButtonIcon: {
     fontSize: 16,
@@ -465,12 +785,28 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
     textAlign: "center",
     lineHeight: 20,
+    marginBottom: 20,
   },
-  pagination:{
-  flexDirection:"column",
-  justifyContent:"space-between", 
-
-  }
+  addLoanButton: {
+    backgroundColor: "#3B82F6",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+  },
+  addLoanButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  pagination: {
+    flexDirection: "column",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#1E293B",
+    borderTopWidth: 1,
+    borderTopColor: "#334155",
+  },
 })
 
-export default LoansScreen;
+export default LoansScreen
