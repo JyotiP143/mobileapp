@@ -19,7 +19,7 @@ import { SearchAndControls } from "../../components/searchandcontrols"
 import type { Loan } from "../../types/index"
 
 const LoansScreen = () => {
-  const [loans, setLoans] = useState()
+ const [loans, setLoans] = useState<Loan[]>([]);
   const [searchValue, setSearchValue] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [filterStatus, setFilterStatus] = useState("All")
@@ -29,83 +29,28 @@ const LoansScreen = () => {
   const [processingLoanId, setProcessingLoanId] = useState<string | null>(null)
 
   const entriesPerPage = 10
-
-  // Mock data fallback when API fails or returns no data
-  const mockLoans: Loan[] = [
-    {
-      id: "1",
-      name: "Prashant",
-      customerId: "CUST-1001",
-      loanId: "LN-1001",
-      loanAmount: 6000,
-      installments: 6,
-      nextPayment: "11 May 2025",
-      status: "Active",
-      phone: "7624821788",
-    },
-    {
-      id: "2",
-      name: "Prashant",
-      customerId: "CUST-1001",
-      loanId: "LN-1002",
-      loanAmount: 4000,
-      installments: 3,
-      nextPayment: "25 Jun 2025",
-      status: "Active",
-      phone: "7624821788",
-    },
-    {
-      id: "3",
-      name: "Rajesh Kumar",
-      customerId: "CUST-1002",
-      loanId: "LN-1003",
-      loanAmount: 8500,
-      installments: 12,
-      nextPayment: "15 May 2025",
-      status: "Overdue",
-      phone: "9876543210",
-    },
-    {
-      id: "4",
-      name: "Anita Sharma",
-      customerId: "CUST-1003",
-      loanId: "LN-1004",
-      loanAmount: 12000,
-      installments: 8,
-      nextPayment: "20 May 2025",
-      status: "Active",
-      phone: "8765432109",
-    },
-  ]
-
-  // Load loans data
   const fetchLoans = useCallback(async (showLoader = true) => {
-    try {
-      if (showLoader) setLoading(true)
-      setError(null)
+  try {
+    if (showLoader) setLoading(true);
+    setError(null);
 
-      // Replace 'user-id' with actual user ID from your auth context
-      const response = await loadLoanData("user-id")
+    const response = await loadLoanData("user-id");
 
-      if (response && Array.isArray(response)) {
-        setLoans(response)
-      } else if (response && response.loans && Array.isArray(response.loans)) {
-        setLoans(response.loans)
-      } else {
-        // Use mock data if API doesn't return proper data
-        console.log("Using mock data - API response:", response)
-        setLoans(mockLoans)
-      }
-    } catch (err) {
-      console.error("Error fetching loans:", err)
-      // Use mock data on error
-      setLoans(mockLoans)
-      setError("Using offline data. Please check your connection.")
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
+    if (response && Array.isArray(response.loans)) {
+      setLoans(response.loans);
+    } else {
+      setLoans([]);
     }
-  }, [])
+  } catch (err) {
+    setError("Using offline data. Please check your connection.");
+    setLoans([]); // fallback
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
+}, []);
+
+
 
   // Initial load
   useEffect(() => {

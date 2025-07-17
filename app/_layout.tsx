@@ -7,9 +7,9 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
-import { CustomTabBar } from "@/components/CustomTabBar";
 import { InvestmentProvider } from "@/context/InvestmentContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import CustomTabBar from "../components/CustomTabBar";
 import { UserProvider } from "./../context/UserContext";
 
 export default function RootLayout() {

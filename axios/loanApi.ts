@@ -1,5 +1,5 @@
+import { Loan } from '../types/index'
 import api from "./api"
-
 export const addLoanDetails = async (loanInfo: any) => {
   try {
     const response = await api.post("/loan/sendUserLoan", loanInfo)
@@ -9,14 +9,28 @@ export const addLoanDetails = async (loanInfo: any) => {
   }
 }
 
-export const loadLoanData = async (id: any) => {
-  try {
-    const response = await api.get(`/loan/getLoanDetails/${id}`)
-    return response.data
-  } catch (error) {
-    console.log("error:----", error)
-  }
+interface LoadLoanResponse {
+  loans: Loan[];
 }
+
+export const loadLoanData = async (id: string): Promise<LoadLoanResponse> => {
+  try {
+    const response = await api.get<LoadLoanResponse>(`/loan/getLoanDetails/${id}`);
+    return response.data; 
+  } catch (error) {
+    console.log("error:----", error);
+    return { loans: [] }; // fallback if needed
+  }
+};
+
+// export const loadLoanData = async (id: any) => {
+//   try {
+//     const response = await api.get(`/loan/getLoanDetails/${id}`)
+//     return response.data
+//   } catch (error) {
+//     console.log("error:----", error)
+//   }
+// }
 
 export const updateEmi = async (emiData: any) => {
   try {
