@@ -48,6 +48,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderTopWidth: 1,
     borderColor: "#374151",
+    marginBottom:40,
   },
   tabButton: {
     flex: 1,

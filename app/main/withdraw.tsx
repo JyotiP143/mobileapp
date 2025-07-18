@@ -10,7 +10,7 @@ import type {
   Investment,
   InvestmentData,
   LoanData,
-  Withdrawal,
+  Withdrawal
 } from "@/types/withdrow"
 import { MaterialIcons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
@@ -70,10 +70,13 @@ const WithdrawalApp: React.FC = () => {
   const totalWithdraws = investments?.reduce((total: number, loan: Withdrawal) => total + Number(loan.amount), 0) || 0
   const totalInvest = loanInvestments?.reduce((total: number, loan: Investment) => total + Number(loan.amount), 0) || 0
   const totalProcessingFee =
-    loanData?.reduce((total: number, item: LoanData) => total + Number.parseInt(item.processingFee, 10), 0) || 0
+   (loanData as LoanData[])?.reduce(
+    (total, item) => total + parseInt(item.processingFee, 10),
+    0
+  ) || 0;
 
-  const totalInterest =
-    loanData?.reduce((total: number, item: LoanData) => {
+ const totalInterest =
+  (loanData as LoanData[])?.reduce((total: number, item) => {
       const loanAmount = Number.parseInt(item.loanAmount, 10)
       const totalInstallment = Number.parseInt(item.totalInstallment, 10)
       const repaymentMethod = item.repaymentMethod
@@ -96,21 +99,21 @@ const WithdrawalApp: React.FC = () => {
     }, 0) || 0
 
   const totalPaidAmount =
-    loanData
+    (loanData as LoanData[])
       ?.flatMap((loan: LoanData) => loan.emiHistory)
       .reduce((total: number, item) => {
         return item.paidStatus === "Paid" ? total + Number.parseInt(item.amount, 10) : total
       }, 0) || 0
 
   const totalPaidPenalty =
-    loanData
+   (loanData as LoanData[])
       ?.flatMap((loan: LoanData) => loan.emiHistory)
       .reduce((total: number, item) => {
         return item.paidStatus === "Paid" ? total + Number.parseInt(item.penaltyAmount, 10) : total
       }, 0) || 0
 
   const totalUserLoan =
-    loanData?.reduce((total: number, item: LoanData) => total + Number.parseInt(item.loanAmount, 10), 0) || 0
+  (loanData as LoanData[])?.reduce((total: number, item: LoanData) => total + Number.parseInt(item.loanAmount, 10), 0) || 0
   const totalCapitalAmt =
     totalPaidPenalty +
     totalInvest -
@@ -240,14 +243,13 @@ const WithdrawalApp: React.FC = () => {
       if (response.success) {
         setInvestmentData((prevData: InvestmentData) => {
           const updatedWithdrawals = prevData.withdrawals.some((wd: Withdrawal) => wd._id === editFormData.wid)
-            ? prevData.withdrawals.map((wd: Withdrawal) =>
-                wd._id === editFormData.wid ? { ...wd, ...editFormData } : wd,
-              )
-            : [...prevData.withdrawals, editFormData as Withdrawal]
-          return {
-            ...prevData,
-            withdrawals: updatedWithdrawals,
-          }
+  ? prevData.withdrawals.map((wd: Withdrawal) =>
+      wd._id === editFormData.wid
+        ? { ...wd, ...editFormData, _id: editFormData.wid } // 🛠 Include _id explicitly
+        : wd,
+    )
+  : [...prevData.withdrawals, { ...editFormData, _id: editFormData.wid } as Withdrawal];
+
         })
         setIsEditModalOpen(false)
         setIsSubmitting(false)
@@ -397,20 +399,6 @@ const WithdrawalApp: React.FC = () => {
       </LinearGradient>
     </View>
   )
-
-  const BalanceCard: React.FC = () => (
-    <View style={styles.balanceCardContainer}>
-      <LinearGradient colors={["#1e40af", "#3b82f6"]} style={styles.balanceCard}>
-        <View style={styles.balanceHeader}>
-          <MaterialIcons name="account-balance-wallet" size={24} color="#ffffff" />
-          <Text style={styles.balanceTitle}>Available Balance</Text>
-        </View>
-        <Text style={styles.balanceAmount}>₹ {totalCapitalAmt.toLocaleString()}</Text>
-        <Text style={styles.balanceSubtext}>Available for withdrawal</Text>
-      </LinearGradient>
-    </View>
-  )
-
   const EntriesModal: React.FC = () => (
     <Modal
       visible={showEntriesModal}
@@ -610,8 +598,7 @@ const WithdrawalApp: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Balance Card */}
-        <BalanceCard />
+      
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
@@ -755,36 +742,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-  },
-  balanceCardContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  balanceCard: {
-    borderRadius: 16,
-    padding: 20,
-    alignItems: "center",
-  },
-  balanceHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
-  },
-  balanceTitle: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  balanceAmount: {
-    color: "#ffffff",
-    fontSize: 28,
-    fontWeight: "800",
-    marginBottom: 4,
-  },
-  balanceSubtext: {
-    color: "rgba(255, 255, 255, 0.8)",
-    fontSize: 14,
   },
   searchContainer: {
     paddingHorizontal: 20,
