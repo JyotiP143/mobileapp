@@ -1,193 +1,717 @@
 "use client"
 
+import { deleteInvestment, invest_Withdraw } from "@/axios/investWithdraw"
+import { useInvestment } from "@/context/InvestmentContext"
+import { useUser } from "@/context/UserContext"
+import type {
+  ApiResponse,
+  EditFormData,
+  FormData,
+  Investment,
+  InvestmentData,
+  LoanData,
+  Withdrawal,
+} from "@/types/withdrow"
+import { MaterialIcons } from "@expo/vector-icons"
+import { LinearGradient } from "expo-linear-gradient"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
 import type React from "react"
-import { useState } from "react"
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { useEffect, useState } from "react"
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { Header } from "../../components/header"
-import { Pagination } from "../../components/pagination"
-import { SearchAndControls } from "../../components/searchandcontrols"
-import type { Withdrawal } from "../../types/index"
 
-const mockWithdrawals: Withdrawal[] = [
-  {
-    id: "1",
-    date: "22-Mar-2025",
-    amount: 25000,
-    remarks: "Emergency fund withdrawal for medical expenses",
-  },
-  {
-    id: "2",
-    date: "18-Mar-2025",
-    amount: 15000,
-    remarks: "Business operational costs and salary payments",
-  },
-  {
-    id: "3",
-    date: "10-Mar-2025",
-    amount: 8500,
-    remarks: "Equipment maintenance and repair costs",
-  },
-  {
-    id: "4",
-    date: "05-Mar-2025",
-    amount: 12000,
-    remarks: "Monthly office rent and utility payments",
-  },
-  {
-    id: "5",
-    date: "28-Feb-2025",
-    amount: 35000,
-    remarks: "Loan disbursement to approved member",
-  },
-  {
-    id: "6",
-    date: "20-Feb-2025",
-    amount: 5500,
-    remarks: "Administrative expenses and documentation",
-  },
-]
+const { width, height } = Dimensions.get("window")
 
-const WithdrawnScreen = () => {
-  const [searchValue, setSearchValue] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const entriesPerPage = 10
+const WithdrawalApp: React.FC = () => {
+  const initialData: FormData = { amount: "", remark: "", date: "" }
+  const editInitialData: EditFormData = { wid: "", amount: "", remark: "", date: "", email: "" }
 
-  const handleWithdraw = () => {
-    console.log("Withdraw pressed")
+  const [formData, setFormData] = useState<FormData>(initialData)
+  const [editFormData, setEditFormData] = useState<EditFormData>(editInitialData)
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+  const [searchTerm, setSearchTerm] = useState<string>("")
+  const [entriesPerPage, setEntriesPerPage] = useState<number>(25)
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [totalPages, setTotalPages] = useState<number>(1)
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false)
+  const [selectedRows, setSelectedRows] = useState<string[]>([])
+  const [selectAll, setSelectAll] = useState<boolean>(false)
+  const [isDeleting, setIsDeleting] = useState<boolean>(false)
+  const [showEntriesModal, setShowEntriesModal] = useState<boolean>(false)
+  const [refreshing, setRefreshing] = useState<boolean>(false)
+
+  const { setInvestmentData, investmentData, loading } = useInvestment()
+  const { loanData } = useUser()
+
+  let investments: Withdrawal[] = []
+  let loanInvestments: Investment[] = []
+
+  if (!loading && investmentData) {
+    investments = investmentData.withdrawals || []
+    loanInvestments = investmentData.investments || []
   }
 
-  const handleExport = () => {
-    console.log("Export pressed")
+  // Financial calculations
+  const totalWithdraws = investments?.reduce((total: number, loan: Withdrawal) => total + Number(loan.amount), 0) || 0
+  const totalInvest = loanInvestments?.reduce((total: number, loan: Investment) => total + Number(loan.amount), 0) || 0
+  const totalProcessingFee =
+    loanData?.reduce((total: number, item: LoanData) => total + Number.parseInt(item.processingFee, 10), 0) || 0
+
+  const totalInterest =
+    loanData?.reduce((total: number, item: LoanData) => {
+      const loanAmount = Number.parseInt(item.loanAmount, 10)
+      const totalInstallment = Number.parseInt(item.totalInstallment, 10)
+      const repaymentMethod = item.repaymentMethod
+      const loanInterest = Number.parseInt(item.interest, 10) / 100
+      let totalWithInterest = 0
+
+      if (repaymentMethod === "daily") {
+        totalWithInterest = loanAmount + loanAmount * loanInterest * totalInstallment
+      } else if (repaymentMethod === "weekly") {
+        totalWithInterest = loanAmount + loanAmount * loanInterest * totalInstallment
+      } else if (repaymentMethod === "monthly") {
+        totalWithInterest = loanAmount + loanAmount * loanInterest * totalInstallment
+      } else {
+        throw new Error("Invalid repayment method")
+      }
+
+      const interestForLoan = totalWithInterest - loanAmount
+      const totalAmount = Number(total) + interestForLoan
+      return Number.parseFloat(totalAmount.toFixed(2))
+    }, 0) || 0
+
+  const totalPaidAmount =
+    loanData
+      ?.flatMap((loan: LoanData) => loan.emiHistory)
+      .reduce((total: number, item) => {
+        return item.paidStatus === "Paid" ? total + Number.parseInt(item.amount, 10) : total
+      }, 0) || 0
+
+  const totalPaidPenalty =
+    loanData
+      ?.flatMap((loan: LoanData) => loan.emiHistory)
+      .reduce((total: number, item) => {
+        return item.paidStatus === "Paid" ? total + Number.parseInt(item.penaltyAmount, 10) : total
+      }, 0) || 0
+
+  const totalUserLoan =
+    loanData?.reduce((total: number, item: LoanData) => total + Number.parseInt(item.loanAmount, 10), 0) || 0
+  const totalCapitalAmt =
+    totalPaidPenalty +
+    totalInvest -
+    totalUserLoan -
+    totalWithdraws +
+    totalProcessingFee +
+    totalInterest +
+    totalPaidAmount
+
+  const filteredWithdrawals =
+    investments?.filter((withdrawal: Withdrawal) => {
+      const matchesSearch = withdrawal.remark.toLowerCase().includes(searchTerm.toLowerCase())
+      return matchesSearch
+    }) || []
+
+  useEffect(() => {
+    setTotalPages(Math.ceil(filteredWithdrawals.length / entriesPerPage))
+  }, [filteredWithdrawals, entriesPerPage])
+
+  const getCurrentPageItems = (): Withdrawal[] => {
+    const startIndex = (currentPage - 1) * entriesPerPage
+    const endIndex = startIndex + entriesPerPage
+    return filteredWithdrawals.slice(startIndex, endIndex)
   }
 
-  const handleWithdrawalPress = (withdrawal: Withdrawal) => {
-    console.log("Withdrawal card pressed:", withdrawal.id)
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString)
+    const day = date.getDate()
+    const month = date.toLocaleString("en-GB", { month: "short" })
+    const year = date.getFullYear()
+    return `${day}-${month}-${year}`
   }
 
-  const handleViewDetails = (withdrawalId: string) => {
-    console.log("View details for withdrawal:", withdrawalId)
+  const handleChange = (name: keyof FormData, value: string): void => {
+    setFormData({ ...formData, [name]: value })
   }
 
-  const filteredWithdrawals = mockWithdrawals.filter(
-    (withdrawal) =>
-      withdrawal.remarks.toLowerCase().includes(searchValue.toLowerCase()) ||
-      withdrawal.date.toLowerCase().includes(searchValue.toLowerCase()),
+  const handleSubmit = async (): Promise<void> => {
+    setIsSubmitting(true)
+
+    if (!formData.amount || !formData.date) {
+      Alert.alert("Error", "Please fill in all required fields")
+      setIsSubmitting(false)
+      return
+    }
+
+    if (totalCapitalAmt < Number(formData.amount)) {
+      setIsSubmitting(false)
+      Alert.alert("Insufficient Funds", "You don't have sufficient amount to withdraw!")
+      return
+    }
+
+    const email = investmentData.email
+    const requestData = {
+      email,
+      withdrawal: { ...formData },
+    }
+
+    try {
+      const response: ApiResponse = await invest_Withdraw(requestData) as any
+      if (response.success) {
+        setIsSubmitting(false)
+        setIsModalOpen(false)
+        setFormData(initialData)
+        setInvestmentData((prevData: InvestmentData) => {
+          const updatedWithdrawals = [...prevData.withdrawals, formData as Withdrawal]
+          return {
+            ...prevData,
+            withdrawals: updatedWithdrawals,
+          }
+        })
+        Alert.alert("Success", "Withdrawal completed successfully!")
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to process withdrawal")
+      setIsSubmitting(false)
+    }
+  }
+
+  const downloadPDF = (): void => {
+    const doc = new jsPDF()
+    doc.text("Withdrawal Records", 14, 10)
+    const tableColumn = ["Date", "Amount", "Remarks"]
+    const tableRows: string[][] = []
+
+    getCurrentPageItems().forEach((withdrawal: Withdrawal) => {
+      const rowData = [formatDate(withdrawal.date), `₹ ${withdrawal.amount}`, withdrawal.remark || "-"]
+      tableRows.push(rowData)
+    })
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 20,
+    })
+
+    doc.save("withdrawal-records.pdf")
+  }
+
+  const editHandleChange = (name: keyof EditFormData, value: string): void => {
+    setEditFormData({ ...editFormData, [name]: value })
+  }
+
+  const editHandleSubmit = async (): Promise<void> => {
+    setIsSubmitting(true)
+
+    if (!editFormData.amount || !editFormData.date) {
+      Alert.alert("Error", "Please fill in all required fields")
+      setIsSubmitting(false)
+      return
+    }
+
+    if (totalCapitalAmt < Number(editFormData.amount)) {
+      setIsSubmitting(false)
+      Alert.alert("Insufficient Funds", "You don't have sufficient amount to withdraw!")
+      return
+    }
+
+    const email = investmentData.email
+    const requestData = {
+      email,
+      withdrawal: { ...editFormData },
+    }
+
+    try {
+      const response: ApiResponse = await invest_Withdraw(requestData) as any
+      if (response.success) {
+        setInvestmentData((prevData: InvestmentData) => {
+          const updatedWithdrawals = prevData.withdrawals.some((wd: Withdrawal) => wd._id === editFormData.wid)
+            ? prevData.withdrawals.map((wd: Withdrawal) =>
+                wd._id === editFormData.wid ? { ...wd, ...editFormData } : wd,
+              )
+            : [...prevData.withdrawals, editFormData as Withdrawal]
+          return {
+            ...prevData,
+            withdrawals: updatedWithdrawals,
+          }
+        })
+        setIsEditModalOpen(false)
+        setIsSubmitting(false)
+        Alert.alert("Success", "Withdrawal updated successfully!")
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to update withdrawal")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleSelectAll = (): void => {
+    if (selectAll) {
+      setSelectedRows([])
+    } else {
+      setSelectedRows(investments.map((row: Withdrawal) => row._id))
+    }
+    setSelectAll(!selectAll)
+  }
+
+  const handleRowSelect = (id: string): void => {
+    let updatedSelection: string[] = []
+    if (selectedRows.includes(id)) {
+      updatedSelection = selectedRows.filter((rowId: string) => rowId !== id)
+    } else {
+      updatedSelection = [...selectedRows, id]
+    }
+    setSelectedRows(updatedSelection)
+    setSelectAll(updatedSelection.length === investments.length)
+  }
+
+  const handleDelete = async (): Promise<void> => {
+    Alert.alert("Confirm Delete", `Are you sure you want to delete ${selectedRows.length} withdrawal(s)?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          setIsDeleting(true)
+          try {
+            const response: ApiResponse = await deleteInvestment({
+              ids: selectedRows,
+              email: investmentData.email,
+            }) as any
+            if (response.success) {
+              setInvestmentData((prevData: InvestmentData) => ({
+                ...prevData,
+                withdrawals: prevData.withdrawals.filter(
+                  (withdrawal: Withdrawal) => !selectedRows.includes(withdrawal._id),
+                ),
+              }))
+              setSelectedRows([])
+              setSelectAll(false)
+              Alert.alert("Success", response.message)
+            } else {
+              Alert.alert("Error", response.message)
+            }
+          } catch (error) {
+            Alert.alert("Error", "Failed to delete withdrawals")
+          } finally {
+            setIsDeleting(false)
+          }
+        },
+      },
+    ])
+  }
+
+  const onRefresh = (): void => {
+    setRefreshing(true)
+    setTimeout(() => {
+      setRefreshing(false)
+    }, 2000)
+  }
+
+  const WithdrawalCard: React.FC<{ withdrawal: Withdrawal; index: number }> = ({ withdrawal, index }) => (
+    <View style={styles.cardContainer}>
+      <LinearGradient colors={["rgba(239, 68, 68, 0.1)", "rgba(220, 38, 38, 0.1)"]} style={styles.card}>
+        <View style={styles.cardHeader}>
+          <TouchableOpacity style={styles.checkbox} onPress={() => handleRowSelect(withdrawal._id)}>
+            <MaterialIcons
+              name={selectedRows.includes(withdrawal._id) ? "check-box" : "check-box-outline-blank"}
+              size={24}
+              color={selectedRows.includes(withdrawal._id) ? "#ef4444" : "#9ca3af"}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => {
+              setIsEditModalOpen(true)
+              setEditFormData({
+                ...editFormData,
+                wid: withdrawal._id,
+                amount: withdrawal.amount,
+                remark: withdrawal.remark,
+                date: withdrawal.date,
+              })
+            }}
+          >
+            <MaterialIcons name="edit" size={20} color="#ef4444" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.cardContent}>
+          <View style={styles.cardRow}>
+            <View style={styles.cardField}>
+              <MaterialIcons name="event" size={20} color="#6366f1" />
+              <Text style={styles.fieldLabel}>Date</Text>
+            </View>
+            <Text style={styles.fieldValue}>{formatDate(withdrawal.date)}</Text>
+          </View>
+
+          <View style={styles.cardRow}>
+            <View style={styles.cardField}>
+              <MaterialIcons name="trending-down" size={20} color="#ef4444" />
+              <Text style={styles.fieldLabel}>Amount</Text>
+            </View>
+            <Text style={[styles.fieldValue, styles.amountText]}>₹ {withdrawal.amount}</Text>
+          </View>
+
+          <View style={styles.cardRow}>
+            <View style={styles.cardField}>
+              <MaterialIcons name="note" size={20} color="#f59e0b" />
+              <Text style={styles.fieldLabel}>Remarks</Text>
+            </View>
+            <Text style={styles.fieldValue} numberOfLines={2}>
+              {withdrawal.remark || "No remarks"}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.withdrawalIndicator}>
+          <MaterialIcons name="arrow-downward" size={16} color="#ef4444" />
+          <Text style={styles.withdrawalText}>Withdrawal</Text>
+        </View>
+      </LinearGradient>
+    </View>
   )
 
-  const totalPages = Math.ceil(filteredWithdrawals.length / entriesPerPage)
-  const startIndex = (currentPage - 1) * entriesPerPage
-  const paginatedWithdrawals = filteredWithdrawals.slice(startIndex, startIndex + entriesPerPage)
-
-  const getWithdrawalCategory = (amount: number) => {
-    if (amount >= 30000) return { category: "Large", color: "#EF4444", bgColor: "#FEF2F2", icon: "🔴" }
-    if (amount >= 15000) return { category: "Medium", color: "#F59E0B", bgColor: "#FFFBEB", icon: "🟡" }
-    return { category: "Small", color: "#10B981", bgColor: "#ECFDF5", icon: "🟢" }
-  }
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString.replace(/-/g, "/"))
-    const now = new Date()
-    const diffTime = Math.abs(now.getTime() - date.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-    if (diffDays === 0) return "Today"
-    if (diffDays === 1) return "Yesterday"
-    if (diffDays <= 7) return `${diffDays} days ago`
-    if (diffDays <= 30) return `${Math.ceil(diffDays / 7)} weeks ago`
-    return `${Math.ceil(diffDays / 30)} months ago`
-  }
-  const EmptyState = () => (
-    <View style={styles.emptyState}>
-      <View style={styles.emptyIconContainer}>
-        <Text style={styles.emptyIcon}>💸</Text>
-      </View>
-      <Text style={styles.emptyTitle}>No withdrawals found</Text>
-      <Text style={styles.emptyText}>Your withdrawal history will appear here once you make your first withdrawal</Text>
-      <TouchableOpacity style={styles.emptyButton} onPress={handleWithdraw}>
-        <Text style={styles.emptyButtonText}>Make First Withdrawal</Text>
-      </TouchableOpacity>
+  const LoadingCard: React.FC = () => (
+    <View style={styles.cardContainer}>
+      <LinearGradient colors={["rgba(107, 114, 128, 0.1)", "rgba(75, 85, 99, 0.1)"]} style={styles.card}>
+        <View style={styles.loadingContent}>
+          <ActivityIndicator size="large" color="#ef4444" />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </LinearGradient>
     </View>
+  )
+
+  const BalanceCard: React.FC = () => (
+    <View style={styles.balanceCardContainer}>
+      <LinearGradient colors={["#1e40af", "#3b82f6"]} style={styles.balanceCard}>
+        <View style={styles.balanceHeader}>
+          <MaterialIcons name="account-balance-wallet" size={24} color="#ffffff" />
+          <Text style={styles.balanceTitle}>Available Balance</Text>
+        </View>
+        <Text style={styles.balanceAmount}>₹ {totalCapitalAmt.toLocaleString()}</Text>
+        <Text style={styles.balanceSubtext}>Available for withdrawal</Text>
+      </LinearGradient>
+    </View>
+  )
+
+  const EntriesModal: React.FC = () => (
+    <Modal
+      visible={showEntriesModal}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setShowEntriesModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <LinearGradient colors={["#1e293b", "#334155"]} style={styles.entriesModalContent}>
+          <Text style={styles.entriesTitle}>Entries per page</Text>
+          {[25, 50, 100].map((entries) => (
+            <TouchableOpacity
+              key={entries}
+              style={[styles.entriesOption, entriesPerPage === entries && styles.entriesOptionActive]}
+              onPress={() => {
+                setEntriesPerPage(entries)
+                setCurrentPage(1)
+                setShowEntriesModal(false)
+              }}
+            >
+              <Text style={[styles.entriesOptionText, entriesPerPage === entries && styles.entriesOptionTextActive]}>
+                {entries}
+              </Text>
+              {entriesPerPage === entries && <MaterialIcons name="check" size={20} color="#10b981" />}
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity style={styles.entriesCloseButton} onPress={() => setShowEntriesModal(false)}>
+            <Text style={styles.entriesCloseText}>Close</Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      </View>
+    </Modal>
+  )
+
+  const AddWithdrawalModal: React.FC = () => (
+    <Modal visible={isModalOpen} transparent animationType="slide" onRequestClose={() => setIsModalOpen(false)}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Add Withdrawal</Text>
+            <TouchableOpacity onPress={() => setIsModalOpen(false)}>
+              <MaterialIcons name="close" size={24} color="#6b7280" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalForm} showsVerticalScrollIndicator={false}>
+            <View style={styles.availableBalance}>
+              <Text style={styles.availableBalanceLabel}>Available Balance</Text>
+              <Text style={styles.availableBalanceAmount}>₹ {totalCapitalAmt.toLocaleString()}</Text>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>
+                Amount <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                style={styles.formInput}
+                placeholder="Enter withdrawal amount"
+                value={formData.amount}
+                onChangeText={(value) => handleChange("amount", value)}
+                keyboardType="numeric"
+                placeholderTextColor="#9ca3af"
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Remarks</Text>
+              <TextInput
+                style={[styles.formInput, styles.textArea]}
+                placeholder="Optional remarks"
+                value={formData.remark}
+                onChangeText={(value) => handleChange("remark", value)}
+                multiline
+                numberOfLines={3}
+                placeholderTextColor="#9ca3af"
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>
+                Date <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                style={styles.formInput}
+                placeholder="YYYY-MM-DD"
+                value={formData.date}
+                onChangeText={(value) => handleChange("date", value)}
+                placeholderTextColor="#9ca3af"
+              />
+            </View>
+          </ScrollView>
+
+          <TouchableOpacity
+            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+            onPress={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <Text style={styles.submitButtonText}>Submit Withdrawal</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  )
+
+  const EditWithdrawalModal: React.FC = () => (
+    <Modal visible={isEditModalOpen} transparent animationType="slide" onRequestClose={() => setIsEditModalOpen(false)}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Edit Withdrawal</Text>
+            <TouchableOpacity onPress={() => setIsEditModalOpen(false)}>
+              <MaterialIcons name="close" size={24} color="#6b7280" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalForm} showsVerticalScrollIndicator={false}>
+            <View style={styles.availableBalance}>
+              <Text style={styles.availableBalanceLabel}>Available Balance</Text>
+              <Text style={styles.availableBalanceAmount}>₹ {totalCapitalAmt.toLocaleString()}</Text>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>
+                Amount <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                style={styles.formInput}
+                placeholder="Enter withdrawal amount"
+                value={editFormData.amount}
+                onChangeText={(value) => editHandleChange("amount", value)}
+                keyboardType="numeric"
+                placeholderTextColor="#9ca3af"
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Remarks</Text>
+              <TextInput
+                style={[styles.formInput, styles.textArea]}
+                placeholder="Optional remarks"
+                value={editFormData.remark}
+                onChangeText={(value) => editHandleChange("remark", value)}
+                multiline
+                numberOfLines={3}
+                placeholderTextColor="#9ca3af"
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>
+                Date <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                style={styles.formInput}
+                placeholder="YYYY-MM-DD"
+                value={editFormData.date}
+                onChangeText={(value) => editHandleChange("date", value)}
+                placeholderTextColor="#9ca3af"
+              />
+            </View>
+          </ScrollView>
+
+          <TouchableOpacity
+            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+            onPress={editHandleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <Text style={styles.submitButtonText}>Update Withdrawal</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
   )
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Withdrawn" icon="arrow-down-circle" buttonText="Withdraw" onButtonPress={handleWithdraw} />
+      <StatusBar barStyle="light-content" backgroundColor="#0f172a" />
+      <LinearGradient colors={["#0f172a", "#1e293b"]} style={styles.background}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <LinearGradient colors={["#ef4444", "#dc2626"]} style={styles.headerIcon}>
+              <MaterialIcons name="trending-down" size={24} color="#ffffff" />
+            </LinearGradient>
+            <Text style={styles.headerTitle}>Withdrawals</Text>
+          </View>
+          <TouchableOpacity style={styles.addButton} onPress={() => setIsModalOpen(true)}>
+            <MaterialIcons name="add" size={20} color="#ffffff" />
+          </TouchableOpacity>
+        </View>
 
-      <SearchAndControls
-        searchValue={searchValue}
-        onSearchChange={setSearchValue}
-        total={filteredWithdrawals.length}
-        onExport={handleExport}
-      />
+        {/* Balance Card */}
+        <BalanceCard />
 
-      <ScrollView
-        style={styles.cardsContainer}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.cardsContent}
-      >
-        {paginatedWithdrawals.length === 0 ? (
-          <EmptyState />
-        ) : (
-          paginatedWithdrawals.map((withdrawal) => {
-            const categoryInfo = getWithdrawalCategory(withdrawal.amount)
-            return (
-              <TouchableOpacity
-                key={withdrawal.id}
-                style={styles.withdrawalCard}
-                onPress={() => handleWithdrawalPress(withdrawal)}
-                activeOpacity={0.7}
-              >
-                {/* Card Header */}
-                <View style={styles.cardHeader}>
-                  <View style={styles.dateContainer}>
-                    <Text style={styles.dateIcon}>📅</Text>
-                    <View>
-                      <Text style={styles.withdrawalDate}>{withdrawal.date}</Text>
-                      <Text style={styles.relativeDate}>{formatDate(withdrawal.date)}</Text>
-                    </View>
-                  </View>
-                  <View style={[styles.categoryBadge, { backgroundColor: categoryInfo.bgColor }]}>
-                    <Text style={styles.categoryIcon}>{categoryInfo.icon}</Text>
-                    <Text style={[styles.categoryText, { color: categoryInfo.color }]}>{categoryInfo.category}</Text>
-                  </View>
-                </View>
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputContainer}>
+            <MaterialIcons name="search" size={20} color="#9ca3af" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search withdrawals..."
+              placeholderTextColor="#9ca3af"
+              value={searchTerm}
+              onChangeText={setSearchTerm}
+            />
+          </View>
+        </View>
 
-                {/* Amount Section */}
-                <View style={styles.amountSection}>
-                  <View style={styles.amountContainer}>
-                    <Text style={styles.amountLabel}>Withdrawal Amount</Text>
-                    <Text style={[styles.withdrawalAmount, { color: categoryInfo.color }]}>
-                      -₹{withdrawal.amount.toLocaleString()}
-                    </Text>
-                  </View>
-                  <View style={styles.amountVisualization}>
-                    <View style={styles.amountBar}>
-                      <View
-                        style={[
-                          styles.amountFill,
-                          {
-                            width: `${Math.min((withdrawal.amount / 50000) * 100, 100)}%`,
-                            backgroundColor: categoryInfo.color,
-                          },
-                        ]}
-                      />
-                    </View>
-                  </View>
-                </View>
+        {/* Action Bar */}
+        <View style={styles.actionBar}>
+          <View style={styles.actionLeft}>
+            <TouchableOpacity style={styles.selectAllButton} onPress={handleSelectAll}>
+              <MaterialIcons name={selectAll ? "check-box" : "check-box-outline-blank"} size={20} color="#ef4444" />
+              <Text style={styles.selectAllText}>All</Text>
+            </TouchableOpacity>
+            {selectedRows.length > 0 && (
+              <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+                <MaterialIcons name="delete" size={18} color="#ef4444" />
+                <Text style={styles.deleteButtonText}>({selectedRows.length})</Text>
               </TouchableOpacity>
-            )
-          })
-        )}
-      </ScrollView>
+            )}
+          </View>
+          <View style={styles.actionRight}>
+            <TouchableOpacity style={styles.entriesButton} onPress={() => setShowEntriesModal(true)}>
+              <Text style={styles.entriesButtonText}>{entriesPerPage}</Text>
+              <MaterialIcons name="keyboard-arrow-down" size={16} color="#ffffff" />
+            </TouchableOpacity>
+            <Text style={styles.totalText}>{filteredWithdrawals.length}</Text>
+            <TouchableOpacity style={styles.exportButton} onPress={downloadPDF}>
+              <MaterialIcons name="download" size={16} color="#ef4444" />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={Math.max(1, totalPages)}
-        totalEntries={filteredWithdrawals.length}
-        entriesPerPage={entriesPerPage}
-        onPageChange={setCurrentPage}
-      />
+        {/* Withdrawal List */}
+        <ScrollView
+          style={styles.listContainer}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          showsVerticalScrollIndicator={false}
+        >
+          {loading
+            ? Array.from({ length: 3 }).map((_, index) => <LoadingCard key={index} />)
+            : getCurrentPageItems().map((withdrawal, index) => (
+                <WithdrawalCard key={withdrawal._id} withdrawal={withdrawal} index={index} />
+              ))}
+
+          {!loading && filteredWithdrawals.length === 0 && (
+            <View style={styles.emptyState}>
+              <MaterialIcons name="money-off" size={64} color="#6b7280" />
+              <Text style={styles.emptyStateText}>No withdrawals found</Text>
+              <Text style={styles.emptyStateSubtext}>Your withdrawal history will appear here</Text>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <View style={styles.paginationContainer}>
+            <TouchableOpacity
+              style={[styles.paginationButton, currentPage === 1 && styles.paginationButtonDisabled]}
+              onPress={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              <MaterialIcons name="chevron-left" size={20} color="#ffffff" />
+            </TouchableOpacity>
+
+            <Text style={styles.paginationText}>
+              {currentPage} of {totalPages}
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.paginationButton, currentPage === totalPages && styles.paginationButtonDisabled]}
+              onPress={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              <MaterialIcons name="chevron-right" size={20} color="#ffffff" />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Modals */}
+        <AddWithdrawalModal />
+        <EditWithdrawalModal />
+        <EntriesModal />
+
+        {/* Loading Overlay */}
+        {isDeleting && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#ef4444" />
+            <Text style={styles.loadingOverlayText}>Deleting...</Text>
+          </View>
+        )}
+      </LinearGradient>
     </SafeAreaView>
   )
 }
@@ -195,304 +719,439 @@ const WithdrawnScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: "#0f172a",
   },
-  summaryContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
+  background: {
+    flex: 1,
   },
-  summaryCard: {
-    backgroundColor: "#1E293B",
-    borderRadius: 16,
-    padding: 20,
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#334155",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
-  summaryItem: {
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1,
+    gap: 12,
   },
-  summaryIcon: {
-    fontSize: 20,
-    marginRight: 12,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    color: "#94A3B8",
-    marginBottom: 4,
-    fontWeight: "500",
-  },
-  summaryValue: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#F8FAFC",
-  },
-  summaryDivider: {
-    width: 1,
+  headerIcon: {
+    width: 40,
     height: 40,
-    backgroundColor: "#334155",
-    marginHorizontal: 16,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  cardsContainer: {
-    flex: 1,
-    paddingHorizontal: 16,
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#ffffff",
   },
-  cardsContent: {
-    paddingBottom: 20,
-    flexGrow: 1,
+  addButton: {
+    backgroundColor: "#ef4444",
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  withdrawalCard: {
-    backgroundColor: "#1E293B",
+  balanceCardContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  balanceCard: {
     borderRadius: 16,
     padding: 20,
+    alignItems: "center",
+  },
+  balanceHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  balanceTitle: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  balanceAmount: {
+    color: "#ffffff",
+    fontSize: 28,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  balanceSubtext: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 14,
+  },
+  searchContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  searchInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(55, 65, 81, 0.8)",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  searchInput: {
+    flex: 1,
+    color: "#ffffff",
+    fontSize: 16,
+  },
+  actionBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  actionLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  selectAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  selectAllText: {
+    color: "#ef4444",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(239, 68, 68, 0.2)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  deleteButtonText: {
+    color: "#ef4444",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  actionRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  entriesButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(55, 65, 81, 0.8)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    gap: 4,
+  },
+  entriesButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  totalText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  exportButton: {
+    backgroundColor: "rgba(239, 68, 68, 0.2)",
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  listContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  cardContainer: {
     marginBottom: 16,
+  },
+  card: {
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
-    borderColor: "#334155",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: "rgba(239, 68, 68, 0.2)",
+    position: "relative",
   },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  dateContainer: {
-    flexDirection: "row",
     alignItems: "center",
-    flex: 1,
+    marginBottom: 16,
   },
-  dateIcon: {
-    fontSize: 16,
-    marginRight: 10,
+  checkbox: {
+    padding: 4,
   },
-  withdrawalDate: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#F8FAFC",
-    marginBottom: 2,
-  },
-  relativeDate: {
-    fontSize: 12,
-    color: "#94A3B8",
-    fontWeight: "500",
-  },
-  categoryBadge: {
-    flexDirection: "row",
+  editButton: {
+    backgroundColor: "rgba(239, 68, 68, 0.2)",
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginLeft: 12,
   },
-  categoryIcon: {
-    fontSize: 12,
-    marginRight: 6,
+  cardContent: {
+    gap: 12,
   },
-  categoryText: {
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-  },
-  amountSection: {
-    marginBottom: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#334155",
-  },
-  amountContainer: {
-    marginBottom: 12,
-  },
-  amountLabel: {
-    fontSize: 12,
-    color: "#94A3B8",
-    marginBottom: 4,
-    textTransform: "uppercase",
-    fontWeight: "500",
-  },
-  withdrawalAmount: {
-    fontSize: 28,
-    fontWeight: "800",
-  },
-  amountVisualization: {
-    marginTop: 8,
-  },
-  amountBar: {
-    height: 6,
-    backgroundColor: "#334155",
-    borderRadius: 3,
-  },
-  amountFill: {
-    height: "100%",
-    borderRadius: 3,
-  },
-  purposeSection: {
-    marginBottom: 16,
-  },
-  purposeLabel: {
-    fontSize: 12,
-    color: "#94A3B8",
-    marginBottom: 8,
-    textTransform: "uppercase",
-    fontWeight: "500",
-  },
-  purposeText: {
-    fontSize: 14,
-    color: "#F8FAFC",
-    lineHeight: 20,
-    fontWeight: "500",
-  },
-  transactionSection: {
+  cardRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 16,
-    backgroundColor: "#374151",
+    alignItems: "center",
+  },
+  cardField: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  fieldLabel: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  fieldValue: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "right",
+    flex: 1,
+  },
+  amountText: {
+    color: "#ef4444",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  withdrawalIndicator: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(239, 68, 68, 0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 12,
-    padding: 16,
   },
-  transactionItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-  transactionIcon: {
-    fontSize: 16,
-    marginBottom: 6,
-  },
-  transactionLabel: {
-    fontSize: 10,
-    color: "#94A3B8",
-    marginBottom: 4,
-    textAlign: "center",
-    fontWeight: "500",
-  },
-  transactionValue: {
+  withdrawalText: {
+    color: "#ef4444",
     fontSize: 12,
-    color: "#F8FAFC",
     fontWeight: "600",
-    textAlign: "center",
   },
-  cardFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  loadingContent: {
     alignItems: "center",
-    marginBottom: 12,
+    justifyContent: "center",
+    paddingVertical: 32,
+    gap: 12,
   },
-  transactionId: {
-    flex: 1,
-  },
-  idLabel: {
-    fontSize: 12,
-    color: "#94A3B8",
-    fontWeight: "500",
-  },
-  detailsButton: {
-    backgroundColor: "#3B82F6",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    shadowColor: "#3B82F6",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  detailsIcon: {
+  loadingText: {
+    color: "#9ca3af",
     fontSize: 14,
-    marginRight: 6,
-  },
-  detailsText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  impactIndicator: {
-    backgroundColor: "#1F2937",
-    borderRadius: 8,
-    padding: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: "#3B82F6",
-  },
-  impactText: {
-    fontSize: 12,
-    color: "#D1D5DB",
-    fontWeight: "500",
-    lineHeight: 16,
   },
   emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 64,
+    gap: 16,
+  },
+  emptyStateText: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  emptyStateSubtext: {
+    color: "#9ca3af",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+    gap: 20,
+  },
+  paginationButton: {
+    backgroundColor: "rgba(239, 68, 68, 0.8)",
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  paginationButtonDisabled: {
+    backgroundColor: "rgba(107, 114, 128, 0.5)",
+  },
+  paginationText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  modalOverlay: {
     flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 80,
-    paddingHorizontal: 40,
   },
-  emptyIconContainer: {
-    width: 100,
-    height: 100,
-    backgroundColor: "#374151",
-    borderRadius: 50,
-    justifyContent: "center",
+  modalContent: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    width: width * 0.9,
+    maxHeight: height * 0.8,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
   },
-  emptyIcon: {
-    fontSize: 48,
-  },
-  emptyTitle: {
+  modalTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#F8FAFC",
-    marginBottom: 12,
-    textAlign: "center",
+    color: "#1f2937",
   },
-  emptyText: {
+  modalForm: {
+    padding: 20,
+    maxHeight: height * 0.5,
+  },
+  availableBalance: {
+    backgroundColor: "#f3f4f6",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  availableBalanceLabel: {
     fontSize: 14,
-    color: "#94A3B8",
-    textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 32,
+    color: "#6b7280",
+    marginBottom: 4,
   },
-  emptyButton: {
-    backgroundColor: "#3B82F6",
-    paddingHorizontal: 24,
+  availableBalanceAmount: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1f2937",
+  },
+  formGroup: {
+    marginBottom: 20,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#374151",
+    marginBottom: 8,
+  },
+  required: {
+    color: "#ef4444",
+  },
+  formInput: {
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 8,
+    paddingHorizontal: 12,
     paddingVertical: 12,
-    borderRadius: 25,
-    shadowColor: "#3B82F6",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    fontSize: 16,
+    color: "#1f2937",
+    backgroundColor: "#ffffff",
   },
-  emptyButtonText: {
-    color: "#FFFFFF",
+  textArea: {
+    height: 80,
+    textAlignVertical: "top",
+  },
+  submitButton: {
+    backgroundColor: "#ef4444",
+    margin: 20,
+    paddingVertical: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  submitButtonDisabled: {
+    backgroundColor: "#9ca3af",
+  },
+  submitButtonText: {
+    color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  entriesModalContent: {
+    borderRadius: 16,
+    padding: 24,
+    width: width * 0.7,
+    maxWidth: 250,
+  },
+  entriesTitle: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  entriesOption: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+  },
+  entriesOptionActive: {
+    backgroundColor: "rgba(16, 185, 129, 0.2)",
+    borderWidth: 1,
+    borderColor: "#10b981",
+  },
+  entriesOptionText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  entriesOptionTextActive: {
+    color: "#10b981",
+  },
+  entriesCloseButton: {
+    backgroundColor: "#6366f1",
+    borderRadius: 8,
+    paddingVertical: 12,
+    marginTop: 16,
+  },
+  entriesCloseText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+  },
+  loadingOverlayText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "500",
   },
 })
 
-export default WithdrawnScreen ;
+export default WithdrawalApp

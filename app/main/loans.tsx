@@ -1,757 +1,723 @@
-"use client"
-import { Pagination } from "@/components/pagination"
-import { useCallback, useEffect, useState } from "react"
+import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
-  RefreshControl,
-  ScrollView,
+  Dimensions,
+  FlatList,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
-  View,
-} from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { addLoanDetails, deleteLoans, loadLoanData, skipedEmi, updateEmi, updateUserLoan } from "../../axios/loanApi"
-import { Header } from "../../components/header"
-import { LoadingSpinner } from "../../components/loanErrormsg/loadingSpinner"
-import { SearchAndControls } from "../../components/searchandcontrols"
-import type { Loan } from "../../types/index"
+  View
+} from 'react-native';
 
-const LoansScreen = () => {
- const [loans, setLoans] = useState<Loan[]>([]);
-  const [searchValue, setSearchValue] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [filterStatus, setFilterStatus] = useState("All")
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [processingLoanId, setProcessingLoanId] = useState<string | null>(null)
+import { updateProfile } from '@/axios/profile';
+import { useUser } from '@/context/UserContext';
 
-  const entriesPerPage = 10
-  const fetchLoans = useCallback(async (showLoader = true) => {
-  try {
-    if (showLoader) setLoading(true);
-    setError(null);
+const { width } = Dimensions.get('window');
 
-    const response = await loadLoanData("user-id");
+const formatDate = (dateString:string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
 
-    if (response && Array.isArray(response.loans)) {
-      setLoans(response.loans);
-    } else {
-      setLoans([]);
-    }
-  } catch (err) {
-    setError("Using offline data. Please check your connection.");
-    setLoans([]); // fallback
-  } finally {
-    setLoading(false);
-    setRefreshing(false);
-  }
-}, []);
+const CardView = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  
+  const { userInfo, setUserInfo, loanData, isLoading } = useUser();
+  const loansPerPage = 6;
 
-
-
-  // Initial load
   useEffect(() => {
-    fetchLoans()
-  }, [fetchLoans])
+    setStatusFilter(userInfo.filter);
+    console.log("user--",loanData)
+  }, [userInfo]);
 
-  // Refresh handler
-  const onRefresh = useCallback(() => {
-    setRefreshing(true)
-    fetchLoans(false)
-  }, [fetchLoans])
+  const handleSearch = (text:string) => {
+    setSearchTerm(text);
+    setCurrentPage(1);
+  };
 
-  const handleAddLoan = () => {
-    // Example of how to use addLoanDetails
-    const newLoanInfo = {
-      name: "New Customer",
-      customerId: "CUST-NEW",
-      loanAmount: 10000,
-      installments: 12,
-      phone: "1234567890",
-      // Add other required fields
-    }
-
-    Alert.alert("Add Loan", "Navigate to add loan form or call addLoanDetails API", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Add Sample Loan",
-        onPress: async () => {
-          try {
-            const response = await addLoanDetails(newLoanInfo)
-            console.log("Add loan response:", response)
-            if (response) {
-              Alert.alert("Success", "Loan added successfully!")
-              fetchLoans(false) // Refresh data
-            }
-          } catch (error) {
-            console.error("Add loan error:", error)
-            Alert.alert("Error", "Failed to add loan. Please try again.")
-          }
-        },
-      },
-    ])
-  }
-
-  const handleExport = () => {
-    console.log("Export loans data")
-    Alert.alert("Export", "Export functionality will be implemented here")
-  }
-
-  const handleFilterPress = () => {
-    const statusOptions = ["All", "Active", "Overdue", "Completed"]
-    Alert.alert(
-      "Filter by Status",
-      "Choose status to filter:",
-      statusOptions.map((status) => ({
-        text: status,
-        onPress: () => setFilterStatus(status),
-      })),
-    )
-  }
-
-  const handlePayPress = async (loanId: string) => {
+  const handlePaymentFilter = async (value:any) => {
+    setStatusFilter(value);
+    setUserInfo({ ...userInfo, filter: value });
+    setShowFilterModal(false);
     try {
-      setProcessingLoanId(loanId)
-
-      Alert.alert("Process Payment", "Choose payment action:", [
-        {
-          text: "Cancel",
-          style: "cancel",
-          onPress: () => setProcessingLoanId(null),
-        },
-        {
-          text: "Pay EMI",
-          onPress: async () => {
-            try {
-              const emiData = {
-                loanId,
-                paymentDate: new Date().toISOString(),
-                amount: calculateNextPaymentAmount(
-                  loans.find((l) => l.loanId === loanId)?.loanAmount || 0,
-                  loans.find((l) => l.loanId === loanId)?.installments || 1,
-                ),
-                // Add other required fields
-              }
-
-              const response = await updateEmi(emiData)
-              console.log("Update EMI response:", response)
-
-              if (response) {
-                Alert.alert("Success", "EMI payment processed successfully!")
-                fetchLoans(false) // Refresh data
-              } else {
-                Alert.alert("Error", "Failed to process payment. Please try again.")
-              }
-            } catch (error) {
-              console.error("Payment error:", error)
-              Alert.alert("Error", "Payment processing failed. Please try again.")
-            } finally {
-              setProcessingLoanId(null)
-            }
-          },
-        },
-        {
-          text: "Skip EMI",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const emiData = {
-                loanId,
-                skipDate: new Date().toISOString(),
-                reason: "User requested skip",
-                // Add other required fields
-              }
-
-              const response = await skipedEmi(emiData)
-              console.log("Skip EMI response:", response)
-
-              if (response) {
-                Alert.alert("Success", "EMI skipped successfully!")
-                fetchLoans(false) // Refresh data
-              } else {
-                Alert.alert("Error", "Failed to skip EMI. Please try again.")
-              }
-            } catch (error) {
-              console.error("Skip EMI error:", error)
-              Alert.alert("Error", "Failed to skip EMI. Please try again.")
-            } finally {
-              setProcessingLoanId(null)
-            }
-          },
-        },
-      ])
+      await updateProfile({ email: userInfo.email, filter: value });
     } catch (error) {
-      console.error("Error in handlePayPress:", error)
-      setProcessingLoanId(null)
+      Alert.alert('Error', 'Failed to update filter preference');
     }
-  }
+  };
 
-  const handleCardPress = (loan: Loan) => {
-    // Navigate to loan details screen or show loan details
-    Alert.alert(
-      "Loan Details",
-      `Loan ID: ${loan.loanId}\nCustomer: ${loan.name}\nAmount: ₹${loan.loanAmount.toLocaleString()}`,
-      [
-        {
-          text: "Close",
-          style: "cancel",
-        },
-        {
-          text: "Edit Loan",
-          onPress: async () => {
-            try {
-              const updatedLoanData = {
-                loanId: loan.loanId,
-                // Add fields you want to update
-                lastModified: new Date().toISOString(),
-              }
+  const filteredLoans = useMemo(() => {
+    return loanData?.filter((loan) => {
+      console.log("loan---",loan)
+      const nameMatch = loan.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const loanStatus = loan?.emiHistory?.every(
+        (emi:any) => emi.paidStatus === 'Paid' || emi.paidStatus === 'Skipped'
+      )
+        ? 'Completed'
+        : 'Active';
+      const matchesStatus =
+        statusFilter === 'all'
+          ? true
+          : loanStatus.toLowerCase() === statusFilter?.toLowerCase();
+      return nameMatch && matchesStatus;
+    }) || [];
+  }, [loanData, searchTerm, statusFilter]);
 
-              const response = await updateUserLoan(updatedLoanData)
-              console.log("Update loan response:", response)
+  const totalLoans = filteredLoans.length;
+  const totalPages = Math.ceil(totalLoans / loansPerPage);
+  const startIndex = (currentPage - 1) * loansPerPage;
+  const displayedLoans = filteredLoans.slice(
+    startIndex,
+    startIndex + loansPerPage
+  );
 
-              if (response) {
-                Alert.alert("Success", "Loan updated successfully!")
-                fetchLoans(false) // Refresh data
-              }
-            } catch (error) {
-              console.error("Update loan error:", error)
-              Alert.alert("Error", "Failed to update loan. Please try again.")
-            }
-          },
-        },
-      ],
-    )
-  }
+  const goToPage = (page:any) => {
+    setCurrentPage(page);
+  };
 
-  const handleDeleteLoan = async (loanId: string) => {
-    Alert.alert("Delete Loan", "Are you sure you want to delete this loan? This action cannot be undone.", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            setProcessingLoanId(loanId)
-
-            const response = await deleteLoans([loanId])
-            console.log("Delete loan response:", response)
-
-            if (response) {
-              Alert.alert("Success", "Loan deleted successfully!")
-              fetchLoans(false) // Refresh data
-            } else {
-              Alert.alert("Error", "Failed to delete loan. Please try again.")
-            }
-          } catch (error) {
-            console.error("Delete error:", error)
-            Alert.alert("Error", "Failed to delete loan. Please try again.")
-          } finally {
-            setProcessingLoanId(null)
-          }
-        },
-      },
-    ])
-  }
-
-  // Filter loans based on search and status
-  const filteredLoans = loans.filter((loan) => {
-    const matchesSearch =
-      loan.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-      loan.loanId.toLowerCase().includes(searchValue.toLowerCase()) ||
-      loan.customerId.toLowerCase().includes(searchValue.toLowerCase())
-
-    const matchesStatus = filterStatus === "All" || loan.status === filterStatus
-
-    return matchesSearch && matchesStatus
-  })
-
-  const totalPages = Math.ceil(filteredLoans.length / entriesPerPage)
-  const startIndex = (currentPage - 1) * entriesPerPage
-  const paginatedLoans = filteredLoans.slice(startIndex, startIndex + entriesPerPage)
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "active":
-        return "#10B981"
-      case "overdue":
-        return "#EF4444"
-      case "completed":
-        return "#6B7280"
-      default:
-        return "#F59E0B"
-    }
-  }
-
-  const getStatusBgColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "active":
-        return "#ECFDF5"
-      case "overdue":
-        return "#FEF2F2"
-      case "completed":
-        return "#F9FAFB"
-      default:
-        return "#FFFBEB"
-    }
-  }
-
-  const calculateNextPaymentAmount = (loanAmount: number, installments: number) => {
-    return Math.round(loanAmount / installments)
-  }
-
-  // Loading state
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <Header title="Loans" icon="card" buttonText="Add Loan" onButtonPress={handleAddLoan} />
-        <LoadingSpinner />
-      </SafeAreaView>
-    )
-  }
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <Header title="Loans" icon="card" buttonText="Add Loan" onButtonPress={handleAddLoan} />
-
-      <SearchAndControls
-        searchValue={searchValue}
-        onSearchChange={setSearchValue}
-        showFilter={true}
-        filterText={filterStatus}
-        onFilterPress={handleFilterPress}
-        total={filteredLoans.length}
-        onExport={handleExport}
-      />
-
-      {error && (
-        <View style={styles.errorBanner}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
-
-      <ScrollView
-        style={styles.cardsContainer}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.cardsContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" colors={["#3B82F6"]} />
-        }
+  const FilterModal = () => (
+    <View style={styles.filterModal}>
+      <LinearGradient
+        colors={['#1e293b', '#334155']}
+        style={styles.filterContent}
       >
-        {paginatedLoans.map((loan) => (
+        <Text style={styles.filterTitle}>Filter by Status</Text>
+        {['all', 'active', 'completed'].map((filter) => (
           <TouchableOpacity
-            key={loan.id}
-            style={styles.loanCard}
-            onPress={() => handleCardPress(loan)}
-            activeOpacity={0.7}
+            key={filter}
+            style={[
+              styles.filterOption,
+              statusFilter === filter && styles.filterOptionActive,
+            ]}
+            onPress={() => handlePaymentFilter(filter)}
           >
-            {/* Card Header */}
-            <View style={styles.cardHeader}>
-              <View style={styles.customerInfo}>
-                <Text style={styles.customerName}>{loan.name}</Text>
-                <Text style={styles.customerId}>ID: {loan.customerId}</Text>
-              </View>
-              <View style={styles.headerActions}>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusBgColor(loan.status) }]}>
-                  <Text style={[styles.statusText, { color: getStatusColor(loan.status) }]}>{loan.status}</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => handleDeleteLoan(loan.loanId)}
-                  disabled={processingLoanId === loan.loanId}
-                >
-                  <Text style={styles.deleteButtonText}>🗑️</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Loan Amount Section */}
-            <View style={styles.amountSection}>
-              <View style={styles.loanAmountContainer}>
-                <Text style={styles.amountLabel}>Loan Amount</Text>
-                <Text style={styles.loanAmount}>₹{loan.loanAmount.toLocaleString()}</Text>
-              </View>
-              <View style={styles.loanIdContainer}>
-                <Text style={styles.loanIdLabel}>Loan ID</Text>
-                <Text style={styles.loanId}>{loan.loanId}</Text>
-              </View>
-            </View>
-
-            {/* Payment Details */}
-            <View style={styles.paymentSection}>
-              <View style={styles.nextPaymentContainer}>
-                <Text style={styles.nextPaymentLabel}>Next Payment</Text>
-                <Text style={styles.nextPaymentAmount}>
-                  ₹{calculateNextPaymentAmount(loan.loanAmount, loan.installments).toLocaleString()}
-                </Text>
-                <Text style={styles.nextPaymentDate}>{loan.nextPayment}</Text>
-              </View>
-              <View style={styles.installmentsContainer}>
-                <Text style={styles.installmentsLabel}>Installments</Text>
-                <View style={styles.installmentsBadge}>
-                  <Text style={styles.installmentsCount}>{loan.installments}</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Contact & Actions */}
-            <View style={styles.cardFooter}>
-              <View style={styles.contactInfo}>
-                <Text style={styles.phoneIcon}>📞</Text>
-                <Text style={styles.phoneNumber}>{loan.phone}</Text>
-              </View>
-              <TouchableOpacity
-                style={[styles.payButton, processingLoanId === loan.loanId && styles.payButtonDisabled]}
-                onPress={() => handlePayPress(loan.loanId)}
-                disabled={processingLoanId === loan.loanId}
-              >
-                {processingLoanId === loan.loanId ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Text style={styles.payButtonIcon}>💳</Text>
-                    <Text style={styles.payButtonText}>Pay Now</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
-
-            {/* Progress Indicator */}
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${(loan.installments / 12) * 100}%` }]} />
-              </View>
-              <Text style={styles.progressText}>{loan.installments} of 12 installments</Text>
-            </View>
+            <Text
+              style={[
+                styles.filterOptionText,
+                statusFilter === filter && styles.filterOptionTextActive,
+              ]}
+            >
+              {filter.charAt(0).toUpperCase() + filter.slice(1)}
+            </Text>
+            {statusFilter === filter && (
+              <MaterialIcons name="check" size={20} color="#10b981" />
+            )}
           </TouchableOpacity>
         ))}
+        <TouchableOpacity
+          style={styles.filterCloseButton}
+          onPress={() => setShowFilterModal(false)}
+        >
+          <Text style={styles.filterCloseText}>Close</Text>
+        </TouchableOpacity>
+      </LinearGradient>
+    </View>
+  );
 
-        {paginatedLoans.length === 0 && !loading && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateIcon}>💳</Text>
-            <Text style={styles.emptyStateTitle}>No loans found</Text>
-            <Text style={styles.emptyStateText}>
-              {searchValue || filterStatus !== "All"
-                ? "Try adjusting your search or filter criteria"
-                : "Get started by adding your first loan"}
-            </Text>
-            {!searchValue && filterStatus === "All" && (
-              <TouchableOpacity style={styles.addLoanButton} onPress={handleAddLoan}>
-                <Text style={styles.addLoanButtonText}>Add Your First Loan</Text>
-              </TouchableOpacity>
-            )}
+  const LoanCard = ({ loan }:any) => {
+    const dueEmi =
+      loan.emiHistory.find((emi:any) => emi.paidStatus === 'Due') ||
+      loan.emiHistory[loan.emiHistory.length - 1];
+    const encodedId = btoa(loan._id);
+    const totalInstallments = loan.emiHistory.reduce((acc:number, curr:any) => {
+      return curr.paidStatus === 'Due' ? acc + 1 : acc;
+    }, 0);
+
+    return (
+      <View style={styles.cardContainer}>
+        <LinearGradient
+          colors={['#1e40af', '#3b82f6', '#1e40af']}
+          style={styles.cardHeader}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
+          <View style={styles.cardHeaderContent}>
+            <Text style={styles.cardName}>{loan.name}</Text>
+            <View style={styles.phoneContainer}>
+              <MaterialIcons name="phone" size={16} color="#ffffff" />
+              <Text style={styles.phoneText}>{loan.phone}</Text>
+            </View>
           </View>
-        )}
-      </ScrollView>
+        </LinearGradient>
 
-      {totalPages > 1 && (
-        <View style={styles.pagination}>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalEntries={filteredLoans.length}
-            entriesPerPage={entriesPerPage}
-            onPageChange={setCurrentPage}
-          />
+        <LinearGradient
+          colors={['#0f172a', '#1e293b']}
+          style={styles.cardBody}
+        >
+          <View style={styles.cardGrid}>
+            <View style={styles.cardRow}>
+              <View style={styles.cardField}>
+                <MaterialIcons name="credit-card" size={16} color="#6366f1" />
+                <Text style={styles.fieldLabel}>Customer ID</Text>
+              </View>
+              <Text style={styles.fieldValue}>{loan.customerId}</Text>
+            </View>
+
+            <View style={styles.cardRow}>
+              <View style={styles.cardField}>
+                <MaterialIcons name="credit-card" size={16} color="#6366f1" />
+                <Text style={styles.fieldLabel}>Loan ID</Text>
+              </View>
+              <Text style={styles.fieldValue}>{loan.loanId}</Text>
+            </View>
+
+            <View style={styles.cardRow}>
+              <View style={styles.cardField}>
+                <MaterialIcons name="attach-money" size={16} color="#6366f1" />
+                <Text style={styles.fieldLabel}>Amount</Text>
+              </View>
+              <Text style={styles.fieldValue}>
+                ₹ {loan.loanAmount.toLocaleString()}
+              </Text>
+            </View>
+
+            <View style={styles.cardRow}>
+              <View style={styles.cardField}>
+                <MaterialIcons name="trending-up" size={16} color="#6366f1" />
+                <Text style={styles.fieldLabel}>Installments</Text>
+              </View>
+              <View style={styles.installmentContainer}>
+                <View
+                  style={[
+                    styles.statusDot,
+                    {
+                      backgroundColor:
+                        totalInstallments === 0 ? '#10b981' : '#f59e0b',
+                    },
+                  ]}
+                />
+                <Text style={styles.fieldValue}>{totalInstallments}</Text>
+              </View>
+            </View>
+
+            <View style={styles.cardRow}>
+              <View style={styles.cardField}>
+                <MaterialIcons name="schedule" size={16} color="#6366f1" />
+                <Text style={styles.fieldLabel}>Next Payment</Text>
+              </View>
+              <View style={styles.paymentInfo}>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    {
+                      backgroundColor:
+                        dueEmi.paidStatus !== 'Due' ? '#dcfce7' : '#fef2f2',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusBadgeText,
+                      {
+                        color:
+                          dueEmi.paidStatus !== 'Due' ? '#166534' : '#dc2626',
+                      },
+                    ]}
+                  >
+                    {dueEmi.paidStatus}
+                  </Text>
+                </View>
+                <Text style={styles.fieldValue}>₹ {dueEmi.amount}</Text>
+                <Text style={styles.dateText}>{formatDate(dueEmi.date)}</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.cardFooter}>
+            <View
+              style={[
+                styles.statusChip,
+                {
+                  backgroundColor:
+                    totalInstallments === 0 ? '#dcfce7' : '#fef3c7',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusChipText,
+                  {
+                    color: totalInstallments === 0 ? '#166534' : '#92400e',
+                  },
+                ]}
+              >
+                {totalInstallments === 0 ? 'Completed' : 'Active'}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.viewButton}
+
+            >
+              <MaterialIcons name="visibility" size={16} color="#6366f1" />
+              <Text style={styles.viewButtonText}>View</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+      </View>
+    );
+  };
+
+  const LoadingCard = () => (
+    <View style={styles.cardContainer}>
+      <LinearGradient
+        colors={['#374151', '#4b5563']}
+        style={styles.cardHeader}
+      >
+        <View style={styles.loadingHeader} />
+      </LinearGradient>
+      <View style={styles.loadingBody}>
+        {Array.from({ length: 5 }).map((_, index) => (
+          <View key={index} style={styles.loadingRow}>
+            <View style={styles.loadingField} />
+            <View style={styles.loadingValue} />
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+
+  const PaginationButton = ({ page, isActive, onPress, disabled }:any) => (
+    <TouchableOpacity
+      style={[
+        styles.paginationButton,
+        isActive && styles.paginationButtonActive,
+        disabled && styles.paginationButtonDisabled,
+      ]}
+      onPress={onPress}
+      disabled={disabled}
+    >
+      <Text
+        style={[
+          styles.paginationButtonText,
+          isActive && styles.paginationButtonTextActive,
+        ]}
+      >
+        {page}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['#0f172a', '#1e293b', '#334155']}
+        style={styles.background}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.searchContainer}>
+            <MaterialIcons name="search" size={20} color="#9ca3af" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by name"
+              placeholderTextColor="#9ca3af"
+              value={searchTerm}
+              onChangeText={handleSearch}
+              editable={!isLoading}
+            />
+          </View>
+
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.filterButton}
+              onPress={() => setShowFilterModal(true)}
+              disabled={isLoading}
+            >
+              <MaterialIcons name="filter-list" size={20} color="#ffffff" />
+            </TouchableOpacity>
+
+            <View style={styles.totalContainer}>
+              <Text style={styles.totalText}>
+                Total: {isLoading ? '...' : totalLoans}
+              </Text>
+            </View>
+          </View>
         </View>
-      )}
-    </SafeAreaView>
-  )
-}
+
+        {/* Pagination */}
+        <View style={styles.paginationContainer}>
+          <TouchableOpacity
+            style={[
+              styles.paginationArrow,
+              (isLoading || currentPage === 1) && styles.paginationArrowDisabled,
+            ]}
+            onPress={() => goToPage(Math.max(1, currentPage - 1))}
+            disabled={isLoading || currentPage === 1}
+          >
+            <MaterialIcons name="chevron-left" size={20} color="#ffffff" />
+          </TouchableOpacity>
+
+          <View style={styles.paginationNumbers}>
+            {Array.from({ length: Math.min(totalPages, 5) }).map((_, index) => {
+              const page = index + 1;
+              return (
+                <PaginationButton
+                  key={page}
+                  page={page}
+                  isActive={page === currentPage && !isLoading}
+                  onPress={() => goToPage(page)}
+                  disabled={isLoading}
+                />
+              );
+            })}
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.paginationArrow,
+              (isLoading || currentPage === totalPages) &&
+                styles.paginationArrowDisabled,
+            ]}
+            onPress={() => goToPage(Math.min(totalPages, currentPage + 1))}
+            disabled={isLoading || currentPage === totalPages}
+          >
+            <MaterialIcons name="chevron-right" size={20} color="#ffffff" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Loan Cards */}
+        <FlatList
+          data={isLoading ? Array.from({ length: loansPerPage }) : displayedLoans}
+          renderItem={({ item, index }) =>
+            isLoading ? <LoadingCard key={index} /> : <LoanCard loan={item} />
+          }
+          keyExtractor={(item:any, index) =>
+            isLoading ? `loading-${index}` : item.loanId
+          }
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          numColumns={1}
+        />
+
+        {/* Filter Modal */}
+        {showFilterModal && <FilterModal />}
+      </LinearGradient>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
   },
-  errorBanner: {
-    backgroundColor: "#FEF2F2",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: "#EF4444",
-  },
-  errorText: {
-    color: "#DC2626",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  cardsContainer: {
+  background: {
     flex: 1,
     paddingHorizontal: 16,
+    paddingTop: 20,
   },
-  cardsContent: {
-    paddingBottom: 20,
+  header: {
+    marginBottom: 20,
   },
-  loanCard: {
-    backgroundColor: "#1E293B",
-    borderRadius: 16,
-    padding: 20,
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(55, 65, 81, 0.8)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#334155",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  customerInfo: {
+  searchInput: {
     flex: 1,
-  },
-  customerName: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#F8FAFC",
-    marginBottom: 4,
-  },
-  customerId: {
-    fontSize: 14,
-    color: "#94A3B8",
-    fontWeight: "500",
+    marginLeft: 12,
+    color: '#ffffff',
+    fontSize: 16,
   },
   headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  filterButton: {
+    backgroundColor: 'rgba(99, 102, 241, 0.8)',
+    borderRadius: 8,
+    padding: 12,
+  },
+  totalContainer: {
+    backgroundColor: 'rgba(55, 65, 81, 0.8)',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  totalText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    backgroundColor: 'rgba(55, 65, 81, 0.8)',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  paginationArrow: {
+    backgroundColor: 'rgba(99, 102, 241, 0.8)',
+    borderRadius: 8,
+    padding: 8,
+  },
+  paginationArrowDisabled: {
+    backgroundColor: 'rgba(107, 114, 128, 0.5)',
+  },
+  paginationNumbers: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
     gap: 8,
   },
+  paginationButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minWidth: 36,
+    alignItems: 'center',
+  },
+  paginationButtonActive: {
+    backgroundColor: '#6366f1',
+  },
+  paginationButtonDisabled: {
+    opacity: 0.5,
+  },
+  paginationButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  paginationButtonTextActive: {
+    color: '#ffffff',
+  },
+  listContainer: {
+    paddingBottom: 20,
+  },
+  cardContainer: {
+    marginBottom: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  cardHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  cardHeaderContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cardName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#ffffff',
+    flex: 1,
+  },
+  phoneContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  phoneText: {
+    color: '#ffffff',
+    fontSize: 14,
+    opacity: 0.9,
+  },
+  cardBody: {
+    padding: 20,
+  },
+  cardGrid: {
+    gap: 16,
+  },
+  cardRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cardField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  fieldLabel: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  fieldValue: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'right',
+  },
+  installmentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  paymentInfo: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
   statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  dateText: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 12,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  statusChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
   },
-  statusText: {
+  statusChipText: {
     fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
+    fontWeight: '600',
   },
-  deleteButton: {
-    padding: 8,
+  viewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+    borderWidth: 1,
+    borderColor: '#6366f1',
     borderRadius: 8,
-    backgroundColor: "#374151",
-  },
-  deleteButtonText: {
-    fontSize: 16,
-  },
-  amountSection: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#334155",
-  },
-  loanAmountContainer: {
-    flex: 1,
-  },
-  amountLabel: {
-    fontSize: 12,
-    color: "#94A3B8",
-    marginBottom: 4,
-    textTransform: "uppercase",
-    fontWeight: "500",
-  },
-  loanAmount: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#3B82F6",
-  },
-  loanIdContainer: {
-    alignItems: "flex-end",
-  },
-  loanIdLabel: {
-    fontSize: 12,
-    color: "#94A3B8",
-    marginBottom: 4,
-    textTransform: "uppercase",
-    fontWeight: "500",
-  },
-  loanId: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#F8FAFC",
-  },
-  paymentSection: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  nextPaymentContainer: {
-    flex: 1,
-  },
-  nextPaymentLabel: {
-    fontSize: 12,
-    color: "#94A3B8",
-    marginBottom: 4,
-    textTransform: "uppercase",
-    fontWeight: "500",
-  },
-  nextPaymentAmount: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#10B981",
-    marginBottom: 2,
-  },
-  nextPaymentDate: {
-    fontSize: 13,
-    color: "#94A3B8",
-    fontWeight: "500",
-  },
-  installmentsContainer: {
-    alignItems: "center",
-  },
-  installmentsLabel: {
-    fontSize: 12,
-    color: "#94A3B8",
-    marginBottom: 8,
-    textTransform: "uppercase",
-    fontWeight: "500",
-  },
-  installmentsBadge: {
-    backgroundColor: "#F59E0B",
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
-    minWidth: 50,
-    alignItems: "center",
   },
-  installmentsCount: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  cardFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  contactInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  phoneIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  phoneNumber: {
+  viewButtonText: {
+    color: '#6366f1',
     fontSize: 14,
-    color: "#94A3B8",
-    fontWeight: "500",
+    fontWeight: '600',
   },
-  payButton: {
-    backgroundColor: "#3B82F6",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    shadowColor: "#3B82F6",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
-    minWidth: 100,
-    justifyContent: "center",
+  loadingHeader: {
+    height: 20,
+    backgroundColor: 'rgba(156, 163, 175, 0.3)',
+    borderRadius: 4,
+    width: '60%',
   },
-  payButtonDisabled: {
-    backgroundColor: "#6B7280",
-    shadowOpacity: 0,
+  loadingBody: {
+    padding: 20,
+    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+    gap: 16,
   },
-  payButtonIcon: {
-    fontSize: 16,
-    marginRight: 8,
+  loadingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  payButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
+  loadingField: {
+    height: 16,
+    backgroundColor: 'rgba(156, 163, 175, 0.3)',
+    borderRadius: 4,
+    width: '40%',
   },
-  progressContainer: {
-    marginTop: 4,
+  loadingValue: {
+    height: 16,
+    backgroundColor: 'rgba(156, 163, 175, 0.3)',
+    borderRadius: 4,
+    width: '30%',
   },
-  progressBar: {
-    height: 4,
-    backgroundColor: "#334155",
-    borderRadius: 2,
-    marginBottom: 8,
+  filterModal: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
   },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#10B981",
-    borderRadius: 2,
+  filterContent: {
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 24,
+    width: width * 0.8,
+    maxWidth: 300,
   },
-  progressText: {
-    fontSize: 12,
-    color: "#94A3B8",
-    textAlign: "center",
-    fontWeight: "500",
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
-  },
-  emptyStateIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  emptyStateTitle: {
+  filterTitle: {
+    color: '#ffffff',
     fontSize: 18,
-    fontWeight: "600",
-    color: "#F8FAFC",
-    marginBottom: 8,
-  },
-  emptyStateText: {
-    fontSize: 14,
-    color: "#94A3B8",
-    textAlign: "center",
-    lineHeight: 20,
+    fontWeight: '700',
     marginBottom: 20,
+    textAlign: 'center',
   },
-  addLoanButton: {
-    backgroundColor: "#3B82F6",
-    paddingHorizontal: 24,
+  filterOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: 12,
-    borderRadius: 25,
-  },
-  addLoanButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  pagination: {
-    flexDirection: "column",
-    justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#1E293B",
-    borderTopWidth: 1,
-    borderTopColor: "#334155",
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
-})
+  filterOptionActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    borderWidth: 1,
+    borderColor: '#10b981',
+  },
+  filterOptionText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  filterOptionTextActive: {
+    color: '#10b981',
+  },
+  filterCloseButton: {
+    backgroundColor: '#6366f1',
+    borderRadius: 8,
+    paddingVertical: 12,
+    marginTop: 16,
+  },
+  filterCloseText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+});
 
-export default LoansScreen
+export default CardView;

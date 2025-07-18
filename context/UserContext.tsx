@@ -67,7 +67,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
 
-  const [userData, setUserData] = useState<UserData>(initialData);
+const [userData, setUserData] = useState<UserData>(initialData);
+
   const [isLoading, setIsLoading] = useState(true);
   const [loanisLoading, setLoanIsLoading] = useState(true);
   const [loanData, setLoanData] = useState<Loan[]>([]);
@@ -126,18 +127,25 @@ console.log("hiiihiihih----",data)
 };
 
 
-  const fetchLoanData = async () => {
-    try {
-      const response : any = await loadLoanData(userData.id);
-      if (response?.success) {
-        setLoanData(response?.loans as any);
-      }
-    } catch (error) {
-      console.error("Loan data error:", error);
-    } finally {
-      setLoanIsLoading(false);
+ const fetchLoanData = async () => {
+  try {
+    if (!userData.id) {
+      console.warn("User ID is null. Skipping loan data fetch.");
+      return;
     }
-  };
+
+    const response: any = await loadLoanData(userData.id);
+
+    if (response?.success) {
+      setLoanData(response.loans as any);
+    }
+  } catch (error) {
+    console.error("Loan data error:", error);
+  } finally {
+    setLoanIsLoading(false);
+  }
+};
+
 
   const ownerDetails = async () => {
     try {
