@@ -23,10 +23,9 @@ import {
   View,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-
 const { width, height } = Dimensions.get("window")
 
-const MembersApp: React.FC = () => {
+const MembersApp = () => {
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [currentPage, setCurrentPage] = useState<number>(1)
@@ -38,6 +37,7 @@ const MembersApp: React.FC = () => {
   const [showEntriesModal, setShowEntriesModal] = useState<boolean>(false)
   const [refreshing, setRefreshing] = useState<boolean>(false)
 
+
   const { loanData, loanisLoading } = useUser()
 
   // Process loan data to get member information
@@ -45,6 +45,11 @@ const MembersApp: React.FC = () => {
     if (!loanData) return []
 
     const result = (loanData as LoanData[]).reduce((acc: any, loan: LoanData) => {
+      console.log("loanData sample:", loanData?.[0]);
+       if (!loan.customerId) {
+    console.warn("Missing customerId in loan", loan);
+    return acc;
+   }
       const { customerId, name } = loan
       if (!acc[customerId]) {
         acc[customerId] = {
