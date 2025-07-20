@@ -1,7 +1,7 @@
 "use client"
 
 import { useUser } from "@/context/UserContext"
-import type { LoanData, Member, MemberStats } from "@/types/member"
+import type { Member, MemberStats } from "@/types/member"
 import { MaterialIcons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import jsPDF from "jspdf"
@@ -44,8 +44,9 @@ const MembersApp = () => {
   const processedMembers = useMemo((): Member[] => {
     if (!loanData) return []
 
-    const result = (loanData as LoanData[]).reduce((acc: any, loan: LoanData) => {
+    const result = loanData.reduce((acc: any, loan: any) => {
       console.log("loanData sample:", loanData?.[0]);
+
        if (!loan.customerId) {
     console.warn("Missing customerId in loan", loan);
     return acc;
@@ -63,7 +64,7 @@ const MembersApp = () => {
       const customer = acc[customerId]
       customer.totalLoanAmount += Number.parseFloat(loan.loanAmount)
 
-      const paidAmount = loan.emiHistory.reduce((total: number, emi) => {
+      const paidAmount = loan.emiHistory.reduce((total: number, emi:any) => {
         if (emi.paidStatus === "Paid") {
           total += Number.parseFloat(emi.amount)
         }
@@ -448,9 +449,7 @@ return Object.entries(result).map(([customerId, data]: [string, any]) => {
               <MaterialIcons name="keyboard-arrow-down" size={16} color="#ffffff" />
             </TouchableOpacity>
             <Text style={styles.totalText}>{filteredMembers.length}</Text>
-            <TouchableOpacity style={styles.exportButton} onPress={downloadPDF}>
-              <MaterialIcons name="download" size={16} color="#3b82f6" />
-            </TouchableOpacity>
+            
           </View>
         </View>
 
@@ -460,7 +459,7 @@ return Object.entries(result).map(([customerId, data]: [string, any]) => {
           renderItem={({ item, index }:any) =>
             loanisLoading ? <LoadingCard key={index} /> : <MemberCard member ={item} index={index} />
           }
-          keyExtractor={({ item, index }:any) => (loanisLoading ? `loading-${index}` : item.customerId)}
+          keyExtractor={({ item, index }:any) => (loanisLoading ? `loading-${index}` : item?.customerId)}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
