@@ -1,7 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useMemo, useState } from 'react';
- 
 import {
   Alert,
   Dimensions,
@@ -14,8 +13,8 @@ import {
 } from 'react-native';
 
 import { updateProfile } from '@/axios/profile';
+import LoanModal from "@/components/model/loan-model";
 import { useUser } from '@/context/UserContext';
-
 const { width } = Dimensions.get('window');
 
 const formatDate = (dateString:string) => {
@@ -32,7 +31,7 @@ const CardView = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('all');
   const [showFilterModal, setShowFilterModal] = useState(false);
-  
+  const [showModal, setShowModal] = useState(false);
   const { userInfo, setUserInfo, loanData, isLoading } = useUser();
   const loansPerPage = 6;
 
@@ -330,6 +329,14 @@ const CardView = () => {
               editable={!isLoading}
             />
           </View>
+            <View>
+      <TouchableOpacity
+        style={styles.totalContainer}
+        onPress={() => setShowModal(true)}>
+        <Text>+ Add</Text>
+      </TouchableOpacity>
+      {showModal && <LoanModal onClose={() => setShowModal(false)} />}
+    </View>
 
           <View style={styles.headerActions}>
             <TouchableOpacity
