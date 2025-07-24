@@ -361,7 +361,7 @@ const InvestmentMobile: React.FC = () => {
           <ScrollView style={styles.modalForm}>
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>
-                Amount <Text style={styles.required}>*</Text>
+                Amount<Text style={styles.required}>*</Text>
               </Text>
               <TextInput
                 style={styles.formInput}

@@ -2,16 +2,17 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "jsx": "react-native",            // ✅ Add this
+    "lib": ["dom", "esnext"],         // ✅ Add this
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     }
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-, "type/loan"  ]
+    "expo-env.d.ts",
+    "type/loan"
+  ]
 }

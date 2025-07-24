@@ -1,3 +1,6 @@
+import { updateProfile } from "@/axios/profile";
+import LoanForm from '@/components/model/loan-model';
+import { useUser } from "@/context/UserContext";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useMemo, useState } from "react";
@@ -11,10 +14,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-import { updateProfile } from "@/axios/profile";
-import LoanModal from "@/components/model/loan-model";
-import { useUser } from "@/context/UserContext";
 const { width } = Dimensions.get("window");
 
 const formatDate = (dateString: string) => {
@@ -333,7 +332,7 @@ const CardView = () => {
             >
               <Text>+ Add</Text>
             </TouchableOpacity>
-            {showModal && <LoanModal onClose={() => setShowModal(false)} />}
+            {showModal && <LoanForm onClose={() => setShowModal(false)} />}
           </View>
 
           <View style={styles.headerActions}>
