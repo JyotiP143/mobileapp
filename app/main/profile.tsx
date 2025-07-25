@@ -1,73 +1,180 @@
 "use client"
-
 import { InvestmentSummary } from "@/components/profile/investment-summary"
-import { ProfileHeader } from "@/components/profile/profile-header"
-import { useUser } from "@/context/UserContext"
-import Skeleton from "react-loading-skeleton"
-import "react-loading-skeleton/dist/skeleton.css"
+import ProfileHeader from "@/components/profile/profile-header"
+import { StyleSheet, View } from "react-native"
 
-export default function ProfilePage(): JSX.Element {
+// Mock useUser for v0 preview
+import { useUser } from "@/context/UserContext"
+
+export default function ProfilePage() {
   const { loanData, isLoading, userInfo } = useUser()
 
   return (
-    <main className="flex-1 p-6">
+    <View style={styles.mainContainer}>
       {isLoading ? (
-        <div className="profile-skeleton">
-          <div className="relative">
-            <div className="bg-gradient-to-r from-blue-400 to-purple-500 h-48 sm:h-56"></div>
-            <div className="mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="relative -mt-12 sm:-mt-16 sm:flex sm:items-end sm:space-x-5">
-                {/* Skeleton for Profile Avatar */}
-                <div className="flex">
-                  <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-full ring-4 ring-white bg-gray-300 animate-pulse"></div>
-                </div>
-                <div className="mt-6 sm:flex-1 sm:min-w-0 sm:flex sm:items-center sm:justify-end sm:space-x-6 sm:pb-1">
-                  <div className="sm:hidden md:block mt-6 min-w-0 flex-1">
-                    {/* Skeleton for Name */}
-                    <div className="h-6 w-40 bg-gray-300 animate-pulse rounded"></div>
-                  </div>
-                  {/* Skeleton for Buttons */}
-                  <div className="mt-6 flex flex-col justify-stretch space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4">
-                    <div className="h-10 w-32 bg-gray-300 animate-pulse rounded"></div>
-                    <div className="h-10 w-32 bg-gray-300 animate-pulse rounded"></div>
-                  </div>
-                </div>
-              </div>
-              <div className="hidden sm:block md:hidden mt-6 min-w-0 flex-1">
-                <div className="h-6 w-40 bg-gray-300 animate-pulse rounded"></div>
-              </div>
-            </div>
-            <div className="mt-6 sm:mt-8 px-4 sm:px-6 lg:px-8">
-              <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 md:grid-cols-3">
-                {/* Skeleton for Contact Info */}
-                {[...Array(5)].map((_, index: number) => (
-                  <div key={index} className="flex items-center text-sm">
-                    <div className="h-5 w-5 bg-gray-300 animate-pulse rounded-full mr-2"></div>
-                    <div className="h-5 w-24 bg-gray-300 animate-pulse rounded"></div>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </div>
-          {/* Cards */}
-          <div className="mt-8 flex gap-5">
-            <div className="flex-1">
-              <Skeleton className="h-52 bg-gray-200 rounded-md" />
-            </div>
-            <div className="flex-1">
-              <Skeleton className="h-52 bg-gray-200 rounded-md" />
-            </div>
-            <div className="flex-1">
-              <Skeleton className="h-52 bg-gray-200 rounded-md" />
-            </div>
-          </div>
-        </div>
+        <View style={styles.profileSkeleton}>
+          <View style={styles.headerBackground}></View>
+          <View style={styles.headerContentContainer}>
+            <View style={styles.profileImageContainer}>
+              {/* Skeleton for Profile Avatar */}
+              <View style={styles.avatarSkeleton}></View>
+            </View>
+            <View style={styles.headerDetailsContainer}>
+              <View style={styles.nameSkeletonContainer}>
+                {/* Skeleton for Name */}
+                <View style={styles.nameSkeleton}></View>
+              </View>
+              {/* Skeleton for Buttons */}
+              <View style={styles.buttonsContainer}>
+                <View style={styles.buttonSkeleton}></View>
+                <View style={styles.buttonSkeleton}></View>
+              </View>
+            </View>
+          </View>
+          <View style={styles.contactInfoContainer}>
+            {/* Skeleton for Contact Info */}
+            {[...Array(5)].map((_, index) => (
+              <View key={index} style={styles.contactItemSkeleton}>
+                <View style={styles.iconSkeleton}></View>
+                <View style={styles.textSkeleton}></View>
+              </View>
+            ))}
+          </View>
+          {/* Cards Skeleton */}
+          <View style={styles.cardsContainer}>
+            <View style={styles.cardSkeleton}></View>
+            <View style={styles.cardSkeleton}></View>
+            <View style={styles.cardSkeleton}></View>
+          </View>
+        </View>
       ) : (
-        <div className="space-y-8">
-          <ProfileHeader userData={userInfo} />
-          <InvestmentSummary loanData={loanData} userData={userInfo} />
-        </div>
+       <View style={styles.loadedContentContainer}>
+  <ProfileHeader userData={{ userData: userInfo }} />
+  <InvestmentSummary
+    loanData={loanData.map((loan) => ({
+      ...loan,
+      loanAmount: loan.loanAmount,
+      totalInstallment: loan.totalInstallment,
+      repaymentMethod: loan.repaymentMethod,
+      interest: loan.interest,
+    }))}
+    userData={{ userData: userInfo }}
+  />
+</View>
+
       )}
-    </main>
+    </View>
   )
 }
+
+const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    padding: 24, // p-6
+    backgroundColor: "#1a1a1a", // Assuming a dark background for the page
+  },
+  profileSkeleton: {
+    flex: 1,
+  },
+  headerBackground: {
+    height: 192, // h-48
+    backgroundColor: "#a78bfa", // from-blue-400 to-purple-500 (simplified to one color for skeleton)
+    borderRadius: 8, // Added for a softer look
+  },
+  headerContentContainer: {
+    marginTop: -48, // -mt-12 (approx)
+    paddingHorizontal: 16, // px-4
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 20, // sm:space-x-5
+  },
+  profileImageContainer: {
+    flexDirection: "row",
+  },
+  avatarSkeleton: {
+    height: 96, // h-24
+    width: 96, // w-24
+    borderRadius: 9999, // rounded-full
+    borderWidth: 4, // ring-4
+    borderColor: "white", // ring-white
+    backgroundColor: "#d1d5db", // bg-gray-300
+    // No direct animate-pulse in RN, but the color gives a hint
+  },
+  headerDetailsContainer: {
+    marginTop: 24, // mt-6
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 24, // sm:space-x-6
+    paddingBottom: 4, // sm:pb-1
+  },
+  nameSkeletonContainer: {
+    // sm:hidden md:block mt-6 min-w-0 flex-1
+    marginTop: 24,
+    minWidth: 0,
+    flex: 1,
+  },
+  nameSkeleton: {
+    height: 24, // h-6
+    width: 160, // w-40
+    backgroundColor: "#d1d5db", // bg-gray-300
+    borderRadius: 4, // rounded
+  },
+  buttonsContainer: {
+    marginTop: 24, // mt-6
+    flexDirection: "column",
+    gap: 12, // space-y-3
+    // sm:flex-row sm:space-y-0 sm:space-x-4
+  },
+  buttonSkeleton: {
+    height: 40, // h-10
+    width: 128, // w-32
+    backgroundColor: "#d1d5db", // bg-gray-300
+    borderRadius: 6, // rounded
+  },
+  contactInfoContainer: {
+    marginTop: 24, // mt-6
+    paddingHorizontal: 16, // px-4
+    flexDirection: "row", // grid grid-cols-1
+    flexWrap: "wrap", // Allows items to wrap
+    gap: 16, // gap-x-4 gap-y-6
+  },
+  contactItemSkeleton: {
+    flexDirection: "row",
+    alignItems: "center",
+    fontSize: 14, // text-sm
+    width: "48%", // Approx for sm:grid-cols-2
+    // For md:grid-cols-3, would need more complex logic or fixed widths
+  },
+  iconSkeleton: {
+    height: 20, // h-5
+    width: 20, // w-5
+    backgroundColor: "#d1d5db", // bg-gray-300
+    borderRadius: 9999, // rounded-full
+    marginRight: 8, // mr-2
+  },
+  textSkeleton: {
+    height: 20, // h-5
+    width: 96, // w-24
+    backgroundColor: "#d1d5db", // bg-gray-300
+    borderRadius: 4, // rounded
+  },
+  cardsContainer: {
+    marginTop: 32, // mt-8
+    flexDirection: "row",
+    gap: 20, // gap-5
+    paddingHorizontal: 16, // Added for consistency
+  },
+  cardSkeleton: {
+    flex: 1,
+    height: 208, // h-52
+    backgroundColor: "#e5e7eb", // bg-gray-200
+    borderRadius: 8, // rounded-md
+  },
+  loadedContentContainer: {
+    flex: 1,
+    gap: 32, // space-y-8
+  },
+})
