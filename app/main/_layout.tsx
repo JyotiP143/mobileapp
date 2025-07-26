@@ -8,6 +8,7 @@ const TabLayout = ()=>  {
       <Stack.Screen name="loans" />
       <Stack.Screen name="members" />
       <Stack.Screen name="withdraw" />
+      <Stack.Screen name="profile" />
     </Stack>
   );
 }

@@ -49,7 +49,7 @@ export default function ProfilePage() {
         </View>
       ) : (
        <View style={styles.loadedContentContainer}>
-  <ProfileHeader userData={{ userData: userInfo }} />
+  <ProfileHeader userData={{ userData: userInfo } as any} />
   <InvestmentSummary
     loanData={loanData.map((loan) => ({
       ...loan,
@@ -58,7 +58,7 @@ export default function ProfilePage() {
       repaymentMethod: loan.repaymentMethod,
       interest: loan.interest,
     }))}
-    userData={{ userData: userInfo }}
+    userData={{ userData: userInfo } as any}
   />
 </View>
 
