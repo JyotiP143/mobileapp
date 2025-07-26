@@ -30,7 +30,7 @@ const CardView = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all");
   const [showFilterModal, setShowFilterModal] = useState(false);
-  const [showModal, setShowModal] = useState(true);
+  const [showModal, setShowModal] = useState<boolean>(false)
   const { userInfo, setUserInfo, loanData, isLoading } = useUser();
   const loansPerPage = 6;
 
@@ -325,15 +325,7 @@ const CardView = () => {
               editable={!isLoading}
             />
           </View>
-          <View>
-            <TouchableOpacity
-              style={styles.totalContainer}
-              onPress={() => setShowModal(true)}
-            >
-              <Text>+ Add</Text>
-            </TouchableOpacity>
-            {showModal && <LoanForm onClose={() => setShowModal(false)} />}
-          </View>
+         
 
           <View style={styles.headerActions}>
             <TouchableOpacity
@@ -393,6 +385,15 @@ const CardView = () => {
             <MaterialIcons name="chevron-right" size={20} color="#ffffff" />
           </TouchableOpacity>
         </View>
+        <View>
+      <TouchableOpacity
+        style={styles.totalContainer}
+        onPress={() => setShowModal(true)}>
+        <Text>Add Loan </Text>
+      </TouchableOpacity>
+
+      {showModal && <LoanForm onClose={() => setShowModal(false)} />}
+    </View>
 
         {/* Loan Cards */}
         <FlatList

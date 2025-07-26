@@ -1,6 +1,9 @@
+import InvestmentSummary from "@/components/profile/investment-summary";
+import { useUser } from "@/context/UserContext";
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useState } from 'react';
+
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +22,10 @@ interface ProfileImage {
   imageData: string;
 }
 
+const userInfo = {
+  joinDate: "",
+};
+
 interface UserData {
   id: string;
   name: string;
@@ -28,6 +35,10 @@ interface UserData {
   companyName: string;
   joinDate: string;
 }
+const loanData = [
+  {
+    
+  }]
 
 interface ProfileState {
   name: string;
@@ -46,6 +57,18 @@ interface ImageData {
   customerId: string;
   owner: string;
 }
+type LoanData = {
+  loanAmount: string;
+  totalInstallment: string;
+  repaymentMethod: string;
+  interest: string;
+};
+type Props = {
+  loanData: LoanData[];
+  userData: {
+    joinDate: string;
+  };
+};
 
 interface ProfileHeaderProps {
   userData: {
@@ -54,6 +77,7 @@ interface ProfileHeaderProps {
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userData }) => {
+  const { loanData, isLoading, userInfo } = useUser()
   const [isEditing, setIsEditing] = useState(false);
   const [avatarSrc, setAvatarSrc] = useState<string>('https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -207,12 +231,22 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userData }) => {
           </View>
         </View>
       </Modal>
+       <InvestmentSummary
+    loanData={loanData.map((loan:any) => ({
+      ...loan,
+      loanAmount: loan.loanAmount,
+      totalInstallment: loan.totalInstallment,
+      repaymentMethod: loan.repaymentMethod,
+      interest: loan.interest,
+    }))}
+    userData={{ userData :userInfo }}
+  />
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { paddingBottom: 30, backgroundColor: '#fff' },
+  container: { paddingBottom: 0, backgroundColor: '#fff' },
   banner: { height: 100, backgroundColor: '#6C63FF' },
   avatarContainer: { alignItems: 'center', marginTop: -50 },
   avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: '#fff' },

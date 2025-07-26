@@ -14,7 +14,7 @@ type LoanModalProps = {
   onClose: () => void
 }
 
-const LoanForm: React.FC<LoanModalProps> = ({ onClose }) => {
+const LoanForm = ({ onClose }: { onClose: () => void }) => {
   const [formData, setFormData] = useState({
     name: "",
     customerId: "CUST-1001",
@@ -341,6 +341,9 @@ const LoanForm: React.FC<LoanModalProps> = ({ onClose }) => {
             <Text style={styles.submitText}>Submit Application</Text>
           </LinearGradient>
         </TouchableOpacity>
+         <TouchableOpacity onPress={onClose}>
+            <Text>Close</Text>
+          </TouchableOpacity>
       </ScrollView>
     </LinearGradient>
   )

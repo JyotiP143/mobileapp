@@ -1,12 +1,11 @@
 "use client"
-import { InvestmentSummary } from "@/components/profile/investment-summary"
 import ProfileHeader from "@/components/profile/profile-header"
 import { StyleSheet, View } from "react-native"
 
 // Mock useUser for v0 preview
 import { useUser } from "@/context/UserContext"
 
-export default function ProfilePage() {
+const ProfilePage = () => {
   const { loanData, isLoading, userInfo } = useUser()
 
   return (
@@ -50,16 +49,7 @@ export default function ProfilePage() {
       ) : (
        <View style={styles.loadedContentContainer}>
   <ProfileHeader userData={{ userData: userInfo } as any} />
-  <InvestmentSummary
-    loanData={loanData.map((loan) => ({
-      ...loan,
-      loanAmount: loan.loanAmount,
-      totalInstallment: loan.totalInstallment,
-      repaymentMethod: loan.repaymentMethod,
-      interest: loan.interest,
-    }))}
-    userData={{ userData: userInfo } as any}
-  />
+  
 </View>
 
       )}
@@ -178,3 +168,5 @@ const styles = StyleSheet.create({
     gap: 32, // space-y-8
   },
 })
+
+export default ProfilePage;
