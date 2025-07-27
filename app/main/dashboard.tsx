@@ -52,72 +52,7 @@ const DashboardScreen = () => {
   return (
     <ScrollView style={styles.dashboardContainer}>
       <SafeAreaView>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.dashboardTitle}>Dashboard</Text>
-          <View style={styles.headerCards}>
-            <View style={styles.headerCard}>
-              <Text style={styles.headerCardLabel}>Total Capital:</Text>
-              <Text style={styles.headerCardValue}>₹100000</Text>
-            </View>
-            <View style={styles.headerCard}>
-              <Text style={styles.headerCardLabel}>Available Credit:</Text>
-              <Text style={styles.headerCardValue}>₹91800</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Metrics Grid */}
-        <View style={styles.metricsGrid}>
-          <MetricCard
-            title="Total Loan Amount"
-            amount="12000"
-            icon="₹"
-            iconBg="#ff6b35"
-          />
-          <MetricCard
-            title="Total Outstanding Loan"
-            amount="9000"
-            icon="₹"
-            iconBg="#ff6b35"
-          />
-          <MetricCard
-            title="Principal Payment"
-            amount="3000"
-            icon="%"
-            iconBg="#e74c3c"
-          />
-          <MetricCard
-            title="Total Processing Fee"
-            amount="400"
-            icon="📄"
-            iconBg="#f39c12"
-          />
-          <MetricCard
-            title="Interest Earnings"
-            amount="800"
-            icon="%"
-            iconBg="#9b59b6"
-          />
-          <MetricCard
-            title="Penalty Earnings"
-            amount="1000"
-            icon="$"
-            iconBg="#3498db"
-          />
-             <MetricCard
-            title="Weekly OutStanding Amount"
-            amount="0"
-            icon="$"
-            iconBg="#3498db"
-          />
-             <MetricCard
-            title="Weekly Paid Amount"
-            amount="0"
-            icon="$"
-            iconBg="#3498db"
-          />
-        </View>
+       
 
         {/* Chart Placeholders */}
         <View style={styles.chartsSection}>

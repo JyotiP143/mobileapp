@@ -11,7 +11,7 @@ import { useUser } from "./../../context/UserContext"
 
 const { width } = Dimensions.get("window")
 
-export default function Dashboard() {
+const Dashboard =() => {
   const { investmentData, loading } = useInvestment()
   const { isLoading, loanData, fetchUserData } = useUser()
   
@@ -56,7 +56,8 @@ export default function Dashboard() {
       return item.paidStatus === "Paid" ? total + Number(item.penaltyAmount) : total
     }, 0)
 
-  const totalInvestment = investment?.reduce(({ total, item }: any) => total + Number.parseInt(item?.amount, 10), 0)
+  const totalInvestment = investment?.reduce(( total:number, item :any) => total + parseInt(item?.amount, 10), 0)
+  console.log("totalInvestment..",totalInvestment)
   const totalWithdraws = withdraws?.reduce(({ total, item }: any) => total + Number.parseInt(item.amount, 10), 0)
 
   const currentYear = new Date().getFullYear()
@@ -474,3 +475,4 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.1)",
   },
 })
+export default Dashboard ;

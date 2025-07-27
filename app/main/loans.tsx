@@ -1,5 +1,4 @@
 import { updateProfile } from "@/axios/profile";
-import LoanForm from '@/components/model/loan-model';
 import { useUser } from "@/context/UserContext";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -8,6 +7,7 @@ import {
   Alert,
   Dimensions,
   FlatList,
+  Modal,
   StyleSheet,
   Text,
   TextInput,
@@ -30,7 +30,7 @@ const CardView = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all");
   const [showFilterModal, setShowFilterModal] = useState(false);
-  const [showModal, setShowModal] = useState<boolean>(false)
+  const [showModal, setShowModal] = useState<boolean>(false);
   const { userInfo, setUserInfo, loanData, isLoading } = useUser();
   const loansPerPage = 6;
 
@@ -308,6 +308,7 @@ const CardView = () => {
 
   return (
     <View style={styles.container}>
+      <Modal visible={showModal} transparent animationType="slide" onRequestClose={() => setShowModal(false)}/>
       <LinearGradient
         colors={["#0f172a", "#1e293b", "#334155"]}
         style={styles.background}
@@ -315,18 +316,23 @@ const CardView = () => {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.searchContainer}>
-            <MaterialIcons name="search" size={20} color="#9ca3af" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by name"
-              placeholderTextColor="#9ca3af"
-              value={searchTerm}
-              onChangeText={handleSearch}
-              editable={!isLoading}
-            />
-          </View>
-         
+            <View style={styles.searchInputContainer}>
+              <MaterialIcons name="search" size={20} color="#9ca3af" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search by name"
+                placeholderTextColor="#9ca3af"
+                value={searchTerm}
+                onChangeText={handleSearch}
+                editable={!isLoading}
+              />
+            </View>
 
+            <TouchableOpacity style={styles.addButton} onPress={() => setShowModal(true)}>
+              <MaterialIcons name="add" size={20} color="#ffffff" />
+            </TouchableOpacity>
+            
+          </View>
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={styles.filterButton}
@@ -385,17 +391,7 @@ const CardView = () => {
             <MaterialIcons name="chevron-right" size={20} color="#ffffff" />
           </TouchableOpacity>
         </View>
-        <View>
-      <TouchableOpacity
-        style={styles.totalContainer}
-        onPress={() => setShowModal(true)}>
-        <Text>Add Loan </Text>
-      </TouchableOpacity>
-
-      {showModal && <LoanForm onClose={() => setShowModal(false)} />}
-    </View>
-
-        {/* Loan Cards */}
+       {/* Loan Cards */}
         <FlatList
           data={
             isLoading ? Array.from({ length: loansPerPage }) : displayedLoans
@@ -428,18 +424,15 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   header: {
-    marginBottom: 20,
+    marginTop: 20,
+    marginBottom: 10,
   },
+
   searchContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(55, 65, 81, 0.8)",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    paddingHorizontal: 1,
+    paddingVertical: 7,
+    gap: 12,
   },
   searchInput: {
     flex: 1,
@@ -450,6 +443,24 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(55, 65, 81, 0.8)",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    gap: 12,
+  },
+  addButton: {
+    backgroundColor: "rgba(99, 102, 241, 0.8)",
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: "center",
     alignItems: "center",
   },
   filterButton: {
@@ -493,6 +504,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     gap: 8,
   },
+
   paginationButton: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 8,
