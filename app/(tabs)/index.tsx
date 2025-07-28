@@ -1,13 +1,16 @@
+"use client"
 import { verifyOwner } from "@/axios/auth";
-import { storeToken } from "@/utils/authToken";
+import OTPVerificationModal from "@/components/model/otpVerificationMode";
+import { useUser } from "@/context/UserContext";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
-import React, { useState } from "react";
+import { useRouter } from "expo-router";
+import type React from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -15,95 +18,199 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
-const LoginScreen = () => {
-  const [email, setEmail] = useState("prashmn17@gmail.com");
-  const [password, setPassword] = useState("1234");
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [modalMessage, setModalMessage] = useState("");
+// Types
+interface LoginData {
+  email: string
+  password: string
+}
 
-  const passsignup = () => {
-    router.push("/signup");
-  };
+type LoginScreenProps = {}
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setModalMessage("Please fill in all fields");
-      setModalVisible(true);
-      return;
+const LoginScreen: React.FC<LoginScreenProps> = () => {
+  const initialData= {
+    email: "",
+    password: "",
+  }
+const { fetchUserData } = useUser();
+  const navigation = useNavigation()
+  const [loginData, setLoginData] = useState<LoginData>(initialData)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [showVerify, setShowVerify] = useState<boolean>(false)
+  const [showOTPModal, setShowOTPModal] = useState<boolean>(false)
+  const [showPassword, setShowPassword] = useState<boolean>(false)
+  const router = useRouter();
+  // Mock functions - replace with your actual implementations
+  // const verifyOwner = async (data: LoginData) => {
+  //   // Replace with your actual API call
+  //   return new Promise((resolve) => {
+  //     setTimeout(() => {
+  //       resolve({
+  //         success: true,
+  //         status: 200,
+  //         message: "Login successful",
+  //       })
+  //     }, 2000)
+  //   })
+  // }
+
+  // const fetchUserData = async () => {
+  //   // Replace with your actual user data fetching logic
+  //   console.log("Fetching user data...")
+  // }
+
+  const updateData = (field: keyof LoginData, value: string) => {
+    setLoginData((prevData) => ({
+      ...prevData,
+      [field]: value,
+    }))
+  }
+
+  const handleSubmit = async () => {
+    if (!loginData.email || !loginData.password) {
+      Toast.show({
+        type: "error",
+        text1: "Validation Error",
+        text2: "Please fill in all fields",
+        position: "top",
+      })
+      return
     }
 
     try {
-      setLoading(true);
-      const resp = await verifyOwner({ email, password });
-      setLoading(false);
+      setIsLoading(true)
+      const response: any = await verifyOwner(loginData)
 
-      if (resp?.success) {
-        setModalMessage("Login successful!");
-        setModalVisible(true);
-         await storeToken('7632hbhsahsbhbahy38e68777@h8huh98*uhuhuhu@!@Y!@hbhshvsadsvdgsvdfsgdvsvhscgaskxsuxAYUJIUaigyugYU');
-        setTimeout(() => {
-          setModalVisible(false);
-          router.push("/main");
-        }, 1000);
+      if (response?.success) {
+        Toast.show({
+          type: "success",
+          text1: "Success",
+          text2: "Logged in successfully!",
+          position: "top",
+        })
+
+        // Navigate to dashboard - replace with your actual screen name
+        router.push("/main");
+        fetchUserData();
+
+      } else if (response?.status === 403) {
+        Toast.show({
+          type: "info",
+          text1: "Email Verification Required",
+          text2: response?.message || "Please verify your email!",
+          position: "top",
+        })
+        setShowVerify(true)
       } else {
-        setModalMessage(resp?.message || "Login failed. Try again.");
-        setModalVisible(true);
+        Toast.show({
+          type: "error",
+          text1: "Login Failed",
+          text2: response?.message || "Invalid login credentials!",
+          position: "top",
+        })
+      }
+    } catch (error: any) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: error?.response?.data?.message || "Something went wrong!",
+        position: "top",
+      })
+      console.error("Error during login:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSendOTP = async () => {
+    try {
+      // Replace with your actual OTP sending logic
+      const response = await fetch("/api/auth/sendOTP", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginData.email }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setShowOTPModal(true)
+        Toast.show({
+          type: "success",
+          text1: "OTP Sent",
+          text2: "OTP sent successfully!",
+          position: "top",
+        })
       }
     } catch (error) {
-      setLoading(false);
-      setModalMessage("Something went wrong. Please try again later.");
-      setModalVisible(true);
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to send OTP",
+        position: "top",
+      })
     }
-  };
+  }
+
+  const navigateToSignUp = () => {
+    navigation.navigate("SignUp" as never)
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={["#667eea", "#764ba2"]}
-        style={styles.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.keyboardView}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
-          >
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardAvoid}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          {/* Background Gradient */}
+          <LinearGradient
+            colors={["rgba(59, 130, 246, 0.1)", "rgba(147, 51, 234, 0.1)", "rgba(236, 72, 153, 0.1)"]}
+            style={styles.backgroundGradient}
+          />
+
+          {/* Animated Gradient Orbs */}
+          <View style={styles.orbContainer}>
+            <LinearGradient
+              colors={["rgba(59, 130, 246, 0.3)", "rgba(59, 130, 246, 0.1)"]}
+              style={[styles.orb, styles.orb1]}
+            />
+            <LinearGradient
+              colors={["rgba(147, 51, 234, 0.3)", "rgba(147, 51, 234, 0.1)"]}
+              style={[styles.orb, styles.orb2]}
+            />
+          </View>
+
+          {/* Main Card */}
+          <View style={styles.card}>
+            {/* Header */}
             <View style={styles.header}>
-              <View style={styles.logoContainer}>
-                <Ionicons name="lock-closed" size={32} color="#fff" />
-              </View>
-              <Text style={styles.title}>Welcome Back</Text>
-              <Text style={styles.subtitle}>
-                Sign in to your account to continue
-              </Text>
+              <LinearGradient colors={["#3B82F6", "#8B5CF6"]} style={styles.iconContainer}>
+                <Ionicons name="wallet" size={32} color="white" />
+              </LinearGradient>
+
+              <Text style={styles.title}>Welcome back</Text>
+              <Text style={styles.subtitle}>Enter your credentials to access your account</Text>
             </View>
 
-            <View style={styles.formContainer}>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Email Address</Text>
-                <View style={styles.inputWrapper}>
-                  <Ionicons
-                    name="mail-outline"
-                    size={20}
-                    color="#9CA3AF"
-                    style={styles.inputIcon}
-                  />
+            {/* Form */}
+            <View style={styles.form}>
+              {/* Email Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Email</Text>
+                {showVerify && (
+                  <TouchableOpacity onPress={handleSendOTP} style={styles.verifyButton}>
+                    <Text style={styles.verifyText}>Verify Email</Text>
+                  </TouchableOpacity>
+                )}
+                <View style={styles.inputContainer}>
+                  <Ionicons name="mail" size={20} color="#9CA3AF" style={styles.inputIcon} />
                   <TextInput
-                    style={styles.textInput}
+                    style={styles.input}
                     placeholder="Enter your email"
-                    placeholderTextColor="#9CA3AF"
-                    value={email}
-                    onChangeText={setEmail}
+                    placeholderTextColor="#6B7280"
+                    value={loginData.email}
+                    onChangeText={(text) => updateData("email", text)}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -111,356 +218,266 @@ const LoginScreen = () => {
                 </View>
               </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Password</Text>
-                <View style={styles.inputWrapper}>
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={20}
-                    color="#9CA3AF"
-                    style={styles.inputIcon}
-                  />
+              {/* Password Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Password</Text>
+                <View style={styles.inputContainer}>
+                  <Ionicons name="lock-closed" size={20} color="#9CA3AF" style={styles.inputIcon} />
                   <TextInput
-                    style={[styles.textInput, { flex: 1 }]}
+                    style={[styles.input, styles.passwordInput]}
                     placeholder="Enter your password"
-                    placeholderTextColor="#9CA3AF"
-                    value={password}
-                    onChangeText={setPassword}
+                    placeholderTextColor="#6B7280"
+                    value={loginData.password}
+                    onChangeText={(text) => updateData("password", text)}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
                   />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    style={styles.eyeIcon}
-                  >
-                    <Ionicons
-                      name={showPassword ? "eye-off-outline" : "eye-outline"}
-                      size={20}
-                      color="#9CA3AF"
-                    />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                    <Ionicons name={showPassword ? "eye" : "eye-off"} size={20} color="#9CA3AF" />
                   </TouchableOpacity>
                 </View>
               </View>
 
-              <View style={styles.optionsContainer}>
-                <TouchableOpacity
-                  style={styles.rememberContainer}
-                  onPress={() => setRememberMe(!rememberMe)}
-                >
-                  <View
-                    style={[
-                      styles.checkbox,
-                      rememberMe && styles.checkboxChecked,
-                    ]}
-                  >
-                    {rememberMe && (
-                      <Ionicons name="checkmark" size={14} color="#fff" />
-                    )}
-                  </View>
-                  <Text style={styles.rememberText}>Remember me</Text>
-                </TouchableOpacity>
-                <TouchableOpacity>
-                  <Text style={styles.forgotText}>Forgot password?</Text>
-                </TouchableOpacity>
-              </View>
-
+              {/* Login Button */}
               <TouchableOpacity
-                style={styles.loginButton}
-                onPress={handleLogin}
-                disabled={loading}
+                style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+                onPress={handleSubmit}
+                disabled={isLoading}
               >
-                <LinearGradient
-                  colors={["#667eea", "#764ba2"]}
-                  style={styles.loginGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
-                  {loading ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                <LinearGradient colors={["#3B82F6", "#8B5CF6"]} style={styles.loginButtonGradient}>
+                  {isLoading ? (
+                    <ActivityIndicator color="white" size="small" />
                   ) : (
-                    <Text style={styles.loginButtonText}>Sign In</Text>
+                    <Text style={styles.loginButtonText}>Login</Text>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
-
-              <View style={styles.signupContainer}>
-                <Text style={styles.signupText}>Dont have an account? </Text>
-                <TouchableOpacity onPress={passsignup}>
-                  <Text style={styles.signupLink}>Sign up here</Text>
-                </TouchableOpacity>
-              </View>
             </View>
 
+            {/* Sign Up Link */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>
-                By signing in, you agree to our{" "}
-                <Text style={styles.footerLink}>Terms of Service</Text>
-                {" and "}
-                <Text style={styles.footerLink}>Privacy Policy</Text>
+                Dont have an account?{" "}
+                <Text style={styles.signUpLink} onPress={() => router.push("/(tabs)/signup")}>
+                  Sign up
+                </Text>
               </Text>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-
-        {/* Custom Alert Modal */}
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContainer}>
-              <Text style={styles.modalMessage}>{modalMessage}</Text>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.modalButtonText}>OK</Text>
-              </TouchableOpacity>
-            </View>
           </View>
-        </Modal>
-      </LinearGradient>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* OTP Modal would go here - you'll need to implement this separately */}
+      {showOTPModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>OTP Verification</Text>
+            <Text style={styles.modalText}>Please check your email for the OTP code</Text>
+            <TouchableOpacity style={styles.modalButton} onPress={() => setShowOTPModal(false)}>
+              <Text style={styles.modalButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+ {showOTPModal && (<OTPVerificationModal email={loginData.email} />)}
+      <Toast />
     </SafeAreaView>
-  );
-};
+  )
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#000000",
   },
-  gradient: {
+  keyboardAvoid: {
     flex: 1,
   },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContainer: {
+  scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 20,
-    // paddingVertical: 10,
+    justifyContent: "center",
+    padding: 16,
+  },
+  backgroundGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  orbContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  orb: {
+    position: "absolute",
+    width: 288,
+    height: 288,
+    borderRadius: 144,
+  },
+  orb1: {
+    top: -16,
+    left: -16,
+  },
+  orb2: {
+    bottom: -16,
+    right: -16,
+  },
+  card: {
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    padding: 24,
+    maxWidth: 400,
+    alignSelf: "center",
+    width: "100%",
   },
   header: {
     alignItems: "center",
-    paddingTop: 60,
-    paddingBottom: 40,
+    marginBottom: 32,
   },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
+  iconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: "center",
-    marginBottom: 24,
+    alignItems: "center",
+    marginBottom: 16,
   },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#fff",
+    color: "transparent",
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 14,
+    color: "#9CA3AF",
     textAlign: "center",
   },
-  formContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: 24,
-    padding: 24,
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 10,
+  form: {
+    gap: 16,
+  },
+  inputGroup: {
+    gap: 8,
+  },
+  label: {
+    fontSize: 14,
+    color: "#E5E7EB",
+    fontWeight: "500",
+  },
+  verifyButton: {
+    position: "absolute",
+    right: 0,
+    top: 24,
+  },
+  verifyText: {
+    fontSize: 12,
+    color: "#60A5FA",
+    textDecorationLine: "underline",
   },
   inputContainer: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 8,
-  },
-  inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F9FAFB",
-    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    paddingHorizontal: 16,
-    height: 56,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 48,
   },
   inputIcon: {
     marginRight: 12,
   },
-  textInput: {
+  input: {
     flex: 1,
+    color: "white",
     fontSize: 16,
-    color: "#111827",
+  },
+  passwordInput: {
+    paddingRight: 40,
   },
   eyeIcon: {
+    position: "absolute",
+    right: 12,
     padding: 4,
   },
-  optionsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 24,
+  loginButton: {
+    marginTop: 16,
+    borderRadius: 8,
+    overflow: "hidden",
   },
-  rememberContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+  loginButtonDisabled: {
+    opacity: 0.7,
   },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: "#D1D5DB",
+  loginButtonGradient: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 8,
-  },
-  checkboxChecked: {
-    backgroundColor: "#667eea",
-    borderColor: "#667eea",
-  },
-  rememberText: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  forgotText: {
-    fontSize: 14,
-    color: "#667eea",
-    fontWeight: "600",
-  },
-  loginButton: {
-    borderRadius: 12,
-    marginBottom: 24,
-    shadowColor: "#667eea",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  loginGradient: {
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
+    minHeight: 48,
   },
   loginButtonText: {
+    color: "white",
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#fff",
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#E5E7EB",
-  },
-  dividerText: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    paddingHorizontal: 16,
-    textTransform: "uppercase",
-  },
-  socialContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 24,
-  },
-  socialButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    paddingVertical: 16,
-    marginHorizontal: 6,
-  },
-  socialButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-    marginLeft: 8,
-  },
-  signupContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  signupText: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  signupLink: {
-    fontSize: 14,
-    color: "#667eea",
     fontWeight: "600",
   },
   footer: {
-    paddingBottom: 24,
-    paddingHorizontal: 16,
+    marginTop: 24,
+    alignItems: "center",
   },
   footerText: {
-    fontSize: 12,
-    color: "rgba(255, 255, 255, 0.7)",
-    textAlign: "center",
-    lineHeight: 18,
+    fontSize: 14,
+    color: "#9CA3AF",
   },
-  footerLink: {
-    color: "#fff",
-    fontWeight: "600",
+  signUpLink: {
+    color: "#60A5FA",
+    fontWeight: "500",
   },
-   modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
     justifyContent: "center",
     alignItems: "center",
   },
-  modalContainer: {
-    backgroundColor: "#fff",
+  modalContent: {
+    backgroundColor: "#1F2937",
+    borderRadius: 12,
     padding: 24,
-    borderRadius: 16,
+    margin: 20,
     alignItems: "center",
-    width: "80%",
   },
-  modalMessage: {
-    fontSize: 16,
-    color: "#111",
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "white",
+    marginBottom: 12,
+  },
+  modalText: {
+    fontSize: 14,
+    color: "#9CA3AF",
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: 20,
   },
   modalButton: {
-    backgroundColor: "#667eea",
-    paddingVertical: 10,
+    backgroundColor: "#3B82F6",
     paddingHorizontal: 24,
+    paddingVertical: 12,
     borderRadius: 8,
   },
   modalButtonText: {
-    color: "#fff",
+    color: "white",
     fontWeight: "600",
-    fontSize: 14,
   },
-});
-export default LoginScreen;
+})
+
+export default LoginScreen
