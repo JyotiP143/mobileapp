@@ -15,7 +15,9 @@ const tabs = [
  const CustomTabBar = () => {
   const router = useRouter();
   const pathname = usePathname();
-
+ if (pathname.includes("/login") || pathname.includes("/signup")) {
+    return null;
+  }
   return (
     <View style={styles.tabBar}>
       {tabs.map((tab :any) => {

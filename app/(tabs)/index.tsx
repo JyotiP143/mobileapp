@@ -21,6 +21,7 @@ import {
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
+import { Bounce, toast } from "react-toastify";
 
 // Types
 interface LoginData {
@@ -97,12 +98,19 @@ const { fetchUserData } = useUser();
         fetchUserData();
 
       } else if (response?.status === 403) {
-        Toast.show({
-          type: "info",
-          text1: "Email Verification Required",
-          text2: response?.message || "Please verify your email!",
-          position: "top",
-        })
+     
+          toast.warn(response?.message || "Please verify your email!", {
+          position: "top-center",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        });
+
         setShowVerify(true)
       } else {
         Toast.show({

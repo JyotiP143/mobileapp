@@ -20,24 +20,25 @@ import {
   View,
 } from "react-native"
 import Toast from "react-native-toast-message"
+import { Bounce, toast } from "react-toastify"
 // Types
 interface FormData {
-  name: string
-  email: string
-  phone: string
-  companyName: string
-  password: string
+  name: "",
+  email: "",
+  phone: "",
+  companyName: "",
+  password: "",
 }
 
-const SignUpScreen: React.FC = () => {
-  const [formData, setFormData] = useState<FormData>({
+const SignUpScreen = () => {
+  const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     companyName: "",
     password: "",
-  })
-    const router = useRouter();
+  });
+  const router = useRouter();
   const { fetchUserData } = useUser();
   const [confirmPassword, setConfirmPassword] = useState<string>("")
   const [otp, setOtp] = useState<string>("")
@@ -89,86 +90,102 @@ const SignUpScreen: React.FC = () => {
       const data = await response.json()
 
       if (response.ok) {
-        Toast.show({
-          type: "success",
-          text1: "Success",
-          text2: data.message || "Account created successfully!",
-          position: "top",
-        })
-        setStep(2)
+         toast.success(data.message, {
+          position: "top-center",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        });
+        setStep(2);
          fetchUserData();
         router.push("/main");
       } else {
-        Toast.show({
-          type: "error",
-          text1: "Signup Failed",
-          text2: data.message || "Failed to create account",
-          position: "top",
-        })
+        toast.error(data.message, {
+          position: "top-center",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        });
       }
     } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: "An error occurred during signup",
-        position: "top",
-      })
+      toast.error("An error occurred during signup", {
+        position: "top-center",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleVerifyOtp = async () => {
-    if (!otp) {
-      Toast.show({
-        type: "error",
-        text1: "Missing OTP",
-        text2: "Please enter the OTP code",
-        position: "top",
-      })
-      return
-    }
-
     try {
-      setIsLoading(true)
-
-      // Replace with your actual API call
+      setIsLoading(true);
       const response = await fetch("/api/auth/verifyOtp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: formData.email, otp }),
-      })
-
-      const data = await response.json()
-
+      });
+      const data = await response.json();
       if (response.ok) {
-        Toast.show({
-          type: "success",
-          text1: "Success",
-          text2: data.message || "Account verified successfully!",
-          position: "top",
-        })
-
-        // Navigate to dashboard
-        navigation.navigate("Dashboard" as never)
+        toast.success(data.message, {
+          position: "top-center",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        });
+        fetchUserData();
+        router.push("/main");
       } else {
-        Toast.show({
-          type: "error",
-          text1: "Verification Failed",
-          text2: data.message || "Invalid OTP code",
-          position: "top",
-        })
+        toast.error(data.message, {
+          position: "top-center",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        });
       }
-    } catch (error) {
-      console.error("OTP Verification Error:", error)
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: "An error occurred during OTP verification",
-        position: "top",
-      })
+    }
+    catch (error) {
+      console.error("OTP Verification Error:", error);
+      toast.error("An error occurred during OTP verification", {
+        position: "top-center",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -477,7 +494,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   row: {
-    flexDirection: "row",
+    flexDirection: "column",
     gap: 12,
   },
   inputGroup: {
@@ -552,4 +569,4 @@ const styles = StyleSheet.create({
   },
 })
 
-export default SignUpScreen
+export default SignUpScreen ;
