@@ -381,10 +381,7 @@ const WithdrawalApp: React.FC = () => {
           </View>
         </View>
 
-        <View style={styles.withdrawalIndicator}>
-          <MaterialIcons name="arrow-downward" size={16} color="#ef4444" />
-          <Text style={styles.withdrawalText}>Withdrawal</Text>
-        </View>
+        
       </LinearGradient>
     </View>
   )
@@ -483,7 +480,7 @@ const WithdrawalApp: React.FC = () => {
               </Text>
               <TextInput
                 style={styles.formInput}
-                placeholder="YYYY-MM-DD"
+                 placeholder="dd/mm/yyyy"
                 value={formData.date}
                 onChangeText={(value) => handleChange("date", value)}
                 placeholderTextColor="#9ca3af"
@@ -557,7 +554,7 @@ const WithdrawalApp: React.FC = () => {
               </Text>
               <TextInput
                 style={styles.formInput}
-                placeholder="YYYY-MM-DD"
+                placeholder="dd/mm/yyyy"
                 value={editFormData.date}
                 onChangeText={(value) => editHandleChange("date", value)}
                 placeholderTextColor="#9ca3af"
@@ -984,7 +981,7 @@ const styles = StyleSheet.create({
   },
   modalForm: {
     padding: 20,
-    maxHeight: height * 0.5,
+    maxHeight: height * 0.10,
   },
   availableBalance: {
     backgroundColor: "#f3f4f6",

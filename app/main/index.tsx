@@ -56,9 +56,13 @@ const Dashboard =() => {
       return item.paidStatus === "Paid" ? total + Number(item.penaltyAmount) : total
     }, 0)
 
-  const totalInvestment = investment?.reduce(( total:number, item :any) => total + parseInt(item?.amount, 10), 0)
+  // const totalInvestment = investment?.reduce(( total:number, item :any) => total + parseInt(item?.amount, 10), 0)
+  const totalInvestment = investment?.reduce((total: number, item: any) => {
+  const amount = Number.parseInt(item?.amount ?? "0", 10);
+  return total + (isNaN(amount) ? 0 : amount);
+}, 0);
   console.log("totalInvestment..",totalInvestment)
-  const totalWithdraws = withdraws?.reduce(({ total, item }: any) => total + Number.parseInt(item.amount, 10), 0)
+  // const totalWithdraws = withdraws?.reduce(({ total, item }: any) => total + Number.parseInt(item.amount, 10), 0)
 
   const currentYear = new Date().getFullYear()
   const combinedMonthlyData = loanData?.map((loan) =>

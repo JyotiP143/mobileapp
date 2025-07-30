@@ -25,29 +25,29 @@ import {
 
 const { width, height } = Dimensions.get("window")
 
-const InvestmentMobile: React.FC = () => {
-  const initialData: FormData = { amount: "", remark: "", date: "" }
-  const editInitialData: EditFormData = { wid: "", amount: "", remark: "", date: "", email: "" }
+const InvestmentMobile = () => {
+  const initialData = { amount: "", remark: "", date: "" };
+  const editInitialData = { wid: "", amount: "", remark: "", date: "", email: "" };
 
-  const [formData, setFormData] = useState<FormData>(initialData)
-  const [editFormData, setEditFormData] = useState<EditFormData>(editInitialData)
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
-  const [searchTerm, setSearchTerm] = useState<string>("")
-  const [entriesPerPage, setEntriesPerPage] = useState<string>("25")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [currentPage, setCurrentPage] = useState<number>(1)
-  const [totalPages, setTotalPages] = useState<number>(1)
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
-  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false)
-  const [selectedRows, setSelectedRows] = useState<string[]>([])
-  const [selectAll, setSelectAll] = useState<boolean>(false)
-  const [isDeleting, setIsDeleting] = useState<boolean>(false)
-  const [showFilterModal, setShowFilterModal] = useState<boolean>(false)
-  const [refreshing, setRefreshing] = useState<boolean>(false)
+  const [formData, setFormData] = useState(initialData)
+  const [editFormData, setEditFormData] = useState(editInitialData)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [entriesPerPage, setEntriesPerPage] = useState("25")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showFilterModal, setShowFilterModal] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   const { setInvestmentData, investmentData, loading } = useInvestment()
 
-  let investments: Investment[] = []
+  let investments = []
   if (!loading && investmentData?.investments) {
     investments = investmentData.investments
   }
@@ -81,40 +81,69 @@ const InvestmentMobile: React.FC = () => {
     setFormData({ ...formData, [name]: value })
   }
 
-  const handleSubmit = async (): Promise<void> => {
-    setIsSubmitting(true)
-    if (!formData.amount || !formData.date) {
-      Alert.alert("Error", "Please fill in all required fields")
-      setIsSubmitting(false)
-      return
-    }
+  // const handleSubmit = async ()=> {
+  //   setIsSubmitting(true)
+  //   if (!formData.amount || !formData.date) {
+  //     Alert.alert("Error", "Please fill in all required fields")
+  //     setIsSubmitting(false)
+  //     return ;
+  //   }
+  //   const email = investmentData.email
+  //   const requestData = {
+  //     email,
+  //     investments: { ...formData },
+  //   }
+  //   try {
+  //     const response = await invest_Withdraw(requestData) as any
+  //     console.log("API response:", response);
+  //     if (response.success) {
+  //       setIsSubmitting(false)
+  //       setIsModalOpen(false)
+  //       setFormData(initialData)
+  //       setInvestmentData((prevData:any) => {
+  //         const updatedInvestments = [...prevData.investments, formData as Investment]
+  //         return {
+  //           ...prevData,
+  //           investments: updatedInvestments,
+  //         }
+  //       })
+  //       Alert.alert("Success", "Investment added successfully!")
+  //     }
+  //   } catch (error) {
+  //     Alert.alert("Error", "Failed to add investment")
+  //     setIsSubmitting(false)
+  //   }
+  // }
 
-    const email = investmentData.email
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    if (!formData.amount || !formData.date) {
+      setIsSubmitting(false);
+      return;
+    }
+    const email = investmentData.email;
     const requestData = {
       email,
-      investments: { ...formData },
-    }
-
+      investments: {
+        ...formData, // Spread form data into the investment object
+      },
+    };
     try {
-      const response = await invest_Withdraw(requestData) as any
+      const response = await invest_Withdraw(requestData) as any;
       if (response.success) {
-        setIsSubmitting(false)
-        setIsModalOpen(false)
-        setFormData(initialData)
-        setInvestmentData((prevData:any) => {
-          const updatedInvestments = [...prevData.investments, formData as Investment]
+        setIsSubmitting(false);
+        setIsModalOpen(false);
+        setInvestmentData((prevData :any) => {
+          const updatedWithdrawals = [...prevData.investments, formData];
           return {
             ...prevData,
-            investments: updatedInvestments,
-          }
-        })
-        Alert.alert("Success", "Investment added successfully!")
+            investments: updatedWithdrawals,
+          };
+        });
       }
-    } catch (error) {
-      Alert.alert("Error", "Failed to add investment")
-      setIsSubmitting(false)
-    }
-  }
+    } catch (error) { }
+  };
 
   const downloadPDF = (): void => {
     const doc = new jsPDF()
@@ -390,13 +419,11 @@ const InvestmentMobile: React.FC = () => {
               </Text>
               <TextInput
                 style={styles.formInput}
-                placeholder="YYYY-MM-DD"
+                placeholder="dd/mm/yyyy"
                 value={formData.date}
                 onChangeText={(value) => handleChange("date", value)}
               />
             </View>
-          </ScrollView>
-
           <TouchableOpacity
             style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
             onPress={handleSubmit}
@@ -404,6 +431,7 @@ const InvestmentMobile: React.FC = () => {
           >
             <Text style={styles.submitButtonText}>{isSubmitting ? "Submitting..." : "Submit"}</Text>
           </TouchableOpacity>
+</ScrollView>
         </View>
       </View>
     </Modal>
@@ -452,7 +480,7 @@ const InvestmentMobile: React.FC = () => {
               </Text>
               <TextInput
                 style={styles.formInput}
-                placeholder="YYYY-MM-DD"
+                placeholder="dd/mm/yyyy"
                 value={editFormData.date}
                 onChangeText={(value) => editHandleChange("date", value)}
               />
