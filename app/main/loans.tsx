@@ -1,4 +1,5 @@
 import { updateProfile } from "@/axios/profile";
+import AddLoanModal from '@/components/model/loan-model';
 import { useUser } from "@/context/UserContext";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -7,12 +8,11 @@ import {
   Alert,
   Dimensions,
   FlatList,
-  Modal,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 const { width } = Dimensions.get("window");
 
@@ -32,6 +32,7 @@ const CardView = () => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showModal, setShowModal] = useState<boolean>(false);
   const { userInfo, setUserInfo, loanData, isLoading } = useUser();
+  const ownerid = ""
   const loansPerPage = 6;
 
   useEffect(() => {
@@ -308,7 +309,6 @@ const CardView = () => {
 
   return (
     <View style={styles.container}>
-      <Modal visible={showModal} transparent animationType="slide" onRequestClose={() => setShowModal(false)}/>
       <LinearGradient
         colors={["#0f172a", "#1e293b", "#334155"]}
         style={styles.background}
@@ -327,11 +327,15 @@ const CardView = () => {
                 editable={!isLoading}
               />
             </View>
-
-            <TouchableOpacity style={styles.addButton} onPress={() => setShowModal(true)}>
-              <MaterialIcons name="add" size={20} color="#ffffff" />
-            </TouchableOpacity>
-            
+            <View>
+             <AddLoanModal visible={showModal} onClose={() => setShowModal(false)} ownerid={ownerid} />
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => setShowModal(true)}
+              >
+                <MaterialIcons name="add" size={20} color="#ffffff" />
+              </TouchableOpacity>
+            </View>
           </View>
           <View style={styles.headerActions}>
             <TouchableOpacity
@@ -391,7 +395,7 @@ const CardView = () => {
             <MaterialIcons name="chevron-right" size={20} color="#ffffff" />
           </TouchableOpacity>
         </View>
-       {/* Loan Cards */}
+        {/* Loan Cards */}
         <FlatList
           data={
             isLoading ? Array.from({ length: loansPerPage }) : displayedLoans
