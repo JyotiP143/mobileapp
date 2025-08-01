@@ -5,15 +5,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import React, { useState } from "react";
 import {
-  Alert,
   Modal,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
+import { Bounce, toast } from "react-toastify";
 
 interface AddLoanModalProps {
   onClose: () => void;
@@ -21,78 +21,161 @@ interface AddLoanModalProps {
   ownerid: string;
 }
 
-interface LoanFormData {
-  name: string;
-  customerId: string;
-  loanId: string;
-  email: string;
-  phone: string;
-  loanAmount: string;
-  processingFee: string;
-  interest: string;
-  totalInstallment: string;
-  installmentAmount: string;
-  advancePayment: string;
-  approvalDate: Date;
-  repaymentStartDate: Date;
-  paymentMethod: string;
-  repaymentMethod: string;
-  owner: string;
-}
+// interface LoanFormData {
+//   name: string;
+//   customerId: string;
+//   loanId: string;
+//   email: string;
+//   phone: string;
+//   loanAmount: string;
+//   processingFee: string;
+//   interest: string;
+//   totalInstallment: string;
+//   installmentAmount: string;
+//   advancePayment: string;
+//   approvalDate: Date;
+//   repaymentStartDate: Date;
+//   paymentMethod: string;
+//   repaymentMethod: string;
+//   owner: string;
+// }
 
 const AddLoanModal: React.FC<AddLoanModalProps> = ({ onClose, visible, ownerid }) => {
   const { setLoanData, userData, loanData } = useUser();
   const { investmentData } = useInvestment();
 
-  const totalInvestAmount = investmentData?.investments?.reduce((sum:number, inv:any) =>{ return sum + parseFloat(inv.amount)}, 0) || 0;
-
+  // const totalInvestAmount = investmentData?.investments?.reduce((sum:number, inv:any) =>{ return sum + parseFloat(inv.amount)}, 0) || 0;
+  const totalInvestAmount = investmentData?.investments?.length
+    ? investmentData.investments.reduce((total:number, invest:any) => total + parseInt(invest.amount, 10), 0)
+    : 0;
   const nextCustomerId = `CUST-${(Math.max(...loanData.map(d => parseInt(d.customerId?.split('-')[1] || "1000"))) || 1000) + 1}`;
   const nextLoanId = `LN-${(Math.max(...loanData.map(d => parseInt(d.loanId?.split('-')[1] || "1000"))) || 1000) + 1}`;
 
-  const [formData, setFormData] = useState<LoanFormData>({
-    name: "",
-    customerId: nextCustomerId,
-    loanId: nextLoanId,
-    email: "",
-    phone: "",
-    loanAmount: "",
-    processingFee: "",
-    interest: "",
-    totalInstallment: "",
-    installmentAmount: "0",
-    advancePayment: "0",
-    approvalDate: new Date(),
-    repaymentStartDate: new Date(),
-    paymentMethod: "",
-    repaymentMethod: "monthly",
-    owner: ownerid,
-  });
 
-  const [showApprovalPicker, setShowApprovalPicker] = useState(false);
-  const [showRepaymentPicker, setShowRepaymentPicker] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
+ const userIdString = String(userData.id);
+ let intialData = {
+    name: "", customerId: `CUST-${nextCustomerId}`, loanId: `LN-${nextLoanId}`, email: "", phone: "", loanAmount: "", processingFee: "",
+    interest: "", totalInstallment: "", installmentAmount: "0", advancePayment: "0", approvalDate: new Date(),
+    repaymentStartDate: new Date(), paymentMethod: "", repaymentMethod: "monthly", owner: userIdString,
+  }
+  const [formData, setFormData] = useState(intialData);
   const calculateInstallmentAmount = () => {
     const amount = parseFloat(formData.loanAmount) || 0;
     const installments = parseInt(formData.totalInstallment) || 1;
     const advance = parseFloat(formData.advancePayment) || 0;
     const interest = parseFloat(formData.interest) || 0;
+    const method = formData.repaymentMethod;
 
-    const method = formData.repaymentMethod.toLowerCase();
-    let interestMultiplier = 1;
-
-    if (method === "daily") interestMultiplier = installments / 365;
-    else if (method === "weekly") interestMultiplier = installments / 52;
-    else interestMultiplier = installments / 12;
-
-    const totalInterest = ((amount * interest) / 100) * interestMultiplier;
     const principalAfterAdvance = Math.max(0, amount - advance);
-    const totalPayable = principalAfterAdvance + totalInterest;
-
-    return (totalPayable / installments).toFixed(2);
+    let yearlyRate = 0;
+    let interestMultiplier = 1;
+    switch (method.toLowerCase()) {
+      case "daily":
+        yearlyRate = interest * 365;
+        interestMultiplier = installments / 365;
+        break;
+      case "weekly":
+        yearlyRate = interest * 52;
+        interestMultiplier = installments / 52;
+        break;
+      case "monthly":
+        yearlyRate = interest * 12;
+        interestMultiplier = installments / 12;
+        break;
+      default:
+        yearlyRate = interest;
+        interestMultiplier = installments / 1;
+        break;
+    }
+    const totalInterestAmount = (amount * yearlyRate / 100) * interestMultiplier;
+    const totalWithInterest = principalAfterAdvance;
+    const installmentAmount = totalWithInterest / installments;
+    return {
+      installmentAmount: parseFloat(installmentAmount.toFixed(2)),
+      yearlyRate: parseFloat(yearlyRate.toFixed(2)),
+      totalInterestAmount: parseFloat(totalInterestAmount.toFixed(2)),
+    };
   };
+// {
+//     name: "",
+//     customerId: nextCustomerId,
+//     loanId: nextLoanId,
+//     email: "",
+//     phone: "",
+//     loanAmount: "",
+//     processingFee: "",
+//     interest: "",
+//     totalInstallment: "",
+//     installmentAmount: "0",
+//     advancePayment: "0",
+//     approvalDate: new Date(),
+//     repaymentStartDate: new Date(),
+//     paymentMethod: "",
+//     repaymentMethod: "monthly",
+//     owner: ownerid,
+//   }
+  const [showApprovalPicker, setShowApprovalPicker] = useState(false);
+  const [showRepaymentPicker, setShowRepaymentPicker] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (key: keyof LoanFormData, value: string | Date) => {
+  // const calculateInstallmentAmount = () => {
+  //   const amount = parseFloat(formData.loanAmount) || 0;
+  //   const installments = parseInt(formData.totalInstallment) || 1;
+  //   const advance = parseFloat(formData.advancePayment) || 0;
+  //   const interest = parseFloat(formData.interest) || 0;
+
+  //   const method = formData.repaymentMethod.toLowerCase();
+  //   let interestMultiplier = 1;
+
+  //   if (method === "daily") interestMultiplier = installments / 365;
+  //   else if (method === "weekly") interestMultiplier = installments / 52;
+  //   else interestMultiplier = installments / 12;
+
+  //   const totalInterest = ((amount * interest) / 100) * interestMultiplier;
+  //   const principalAfterAdvance = Math.max(0, amount - advance);
+  //   const totalPayable = principalAfterAdvance + totalInterest;
+
+  //   return (totalPayable / installments).toFixed(2);
+  // };
+
+  // const calculateInstallmentAmount = () => {
+  //   const amount = parseFloat(formData.loanAmount) || 0;
+  //   const installments = parseInt(formData.totalInstallment) || 1;
+  //   const advance = parseFloat(formData.advancePayment) || 0;
+  //   const interest = parseFloat(formData.interest) || 0;
+  //   const method = formData.repaymentMethod;
+
+  //   const principalAfterAdvance = Math.max(0, amount - advance);
+  //   let yearlyRate = 0;
+  //   let interestMultiplier = 1;
+  //   switch (method.toLowerCase()) {
+  //     case "daily":
+  //       yearlyRate = interest * 365;
+  //       interestMultiplier = installments / 365;
+  //       break;
+  //     case "weekly":
+  //       yearlyRate = interest * 52;
+  //       interestMultiplier = installments / 52;
+  //       break;
+  //     case "monthly":
+  //       yearlyRate = interest * 12;
+  //       interestMultiplier = installments / 12;
+  //       break;
+  //     default:
+  //       yearlyRate = interest;
+  //       interestMultiplier = installments / 1;
+  //       break;
+  //   }
+  //   const totalInterestAmount = (amount * yearlyRate / 100) * interestMultiplier;
+  //   const totalWithInterest = principalAfterAdvance;
+  //   const installmentAmount = totalWithInterest / installments;
+  //   return {
+  //     installmentAmount: parseFloat(installmentAmount.toFixed(2)),
+  //     yearlyRate: parseFloat(yearlyRate.toFixed(2)),
+  //     totalInterestAmount: parseFloat(totalInterestAmount.toFixed(2)),
+  //   };
+  // };
+  const handleChange = (key: keyof FormData, value: string | Date) => {
     const updated = { ...formData, [key]: value };
     if (
       ["loanAmount", "advancePayment", "interest", "totalInstallment", "repaymentMethod"].includes(key)
@@ -102,43 +185,147 @@ const AddLoanModal: React.FC<AddLoanModalProps> = ({ onClose, visible, ownerid }
     setFormData(updated);
   };
 
-  const handleSubmit = async () => {
+  // const handleSubmit = async () => {
+  //   const requiredFields = [
+  //     "name", "customerId", "loanId", "phone", "loanAmount",
+  //     "processingFee", "interest", "totalInstallment", "paymentMethod",
+  //     "repaymentMethod",
+  //   ];
+  //   const missingFields = requiredFields.filter(field => !formData[field as keyof LoanFormData]);
+  //   if (missingFields.length > 0) {
+  //     Alert.alert("Missing Fields", `Please fill all required fields.`);
+  //     return;
+  //   }
+  //   if (parseFloat(formData.loanAmount) > totalInvestAmount) {
+  //     Alert.alert("Error", "Loan amount exceeds total investment.");
+  //     return;
+  //   }
+
+  //   setIsSubmitting(true);
+  //   try {
+  //     const res = await addLoanDetails(formData) as any;
+  //     if (res.success) {
+  //       setLoanData((prev) => [...prev, res.data]);
+  //       setFormData(prev => ({ ...prev, name: "", email: "", phone: "", loanAmount: "", processingFee: "", interest: "", totalInstallment: "", advancePayment: "0", installmentAmount: "0" }));
+  //       onClose();
+  //     } else {
+  //       Alert.alert("Error", "Failed to add loan.");
+  //     }
+  //   } catch (err) {
+  //     console.error("Loan Submit Error:", err);
+  //     Alert.alert("Error", "Something went wrong.");
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
+
+    const handleSubmit = async () => {
     const requiredFields = [
-      "name", "customerId", "loanId", "phone", "loanAmount",
-      "processingFee", "interest", "totalInstallment", "paymentMethod",
+      "name",
+      "customerId",
+      "loanId",
+      "phone",
+      "loanAmount",
+      "processingFee",
+      "interest",
+      "totalInstallment",
+      "installmentAmount",
+      "advancePayment",
+      "approvalDate",
+      "repaymentStartDate",
+      "paymentMethod",
       "repaymentMethod",
     ];
 
-    const missingFields = requiredFields.filter(field => !formData[field as keyof LoanFormData]);
+    const missingFields = requiredFields.filter((field) => !formData[field as keyof typeof formData]);
 
     if (missingFields.length > 0) {
-      Alert.alert("Missing Fields", `Please fill all required fields.`);
+      toast.error(`Please fill all required fields: ${missingFields.join(", ")}`, {
+        position: "top-center",
+        autoClose: 1500,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
+      setIsSubmitting(false);
       return;
     }
-
-    if (parseFloat(formData.loanAmount) > totalInvestAmount) {
-      Alert.alert("Error", "Loan amount exceeds total investment.");
-      return;
-    }
-
+    setFormData((prevData) => ({
+      ...prevData,
+      owner: ownerid,
+    }));
     setIsSubmitting(true);
     try {
-      const res = await addLoanDetails(formData) as any;
-      if (res.success) {
-        setLoanData((prev) => [...prev, res.data]);
-        setFormData(prev => ({ ...prev, name: "", email: "", phone: "", loanAmount: "", processingFee: "", interest: "", totalInstallment: "", advancePayment: "0", installmentAmount: "0" }));
-        onClose();
-      } else {
-        Alert.alert("Error", "Failed to add loan.");
+      if (totalInvestAmount < formData.loanAmount) {
+        toast.error("Investment amount is less than the loan amount...", {
+          position: "top-center",
+          autoClose: 2000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        });
       }
-    } catch (err) {
-      console.error("Loan Submit Error:", err);
-      Alert.alert("Error", "Something went wrong.");
-    } finally {
+      else {
+        const response = await addLoanDetails(formData);
+        if (response.success) {
+          setLoanData((prevLoans) =>
+            Array.isArray(prevLoans)
+              ? [...prevLoans, response.data]
+              : [response.data]
+          );
+          setFormData(intialData);
+          toast.success("loan added SuccessFully!!..", {
+            position: "top-center",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: false,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
+            transition: Bounce,
+          });
+          onClose();
+        } else {
+          toast.error("Failed to submit loan data", {
+            position: "top-center",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: false,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
+            transition: Bounce,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error submitting loan data:", error);
+      toast.error("An unexpected error occurred", {
+        position: "top-center",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
+    }
+    finally {
       setIsSubmitting(false);
     }
   };
-
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.overlay}>
@@ -151,23 +338,23 @@ const AddLoanModal: React.FC<AddLoanModalProps> = ({ onClose, visible, ownerid }
           </View>
 
           <ScrollView style={styles.formContainer} contentContainerStyle={{ paddingBottom: 20 }}>
-            <FormInput label="Name" value={formData.name} onChangeText={(val:any) => handleChange("name", val)} />
-            <FormInput label="Customer ID" value={formData.customerId} onChangeText={(val:any) => handleChange("customerId", val)} />
-            <FormInput label="Loan ID" value={formData.loanId} onChangeText={(val:any) => handleChange("loanId", val)} />
-            <FormInput label="Email" value={formData.email} onChangeText={(val:any) => handleChange("email", val)} keyboardType="email-address" />
-            <FormInput label="Phone" value={formData.phone} onChangeText={(val:any) => handleChange("phone", val)} keyboardType="number-pad" />
-            <FormInput label="Loan Amount" value={formData.loanAmount} onChangeText={(val:any) => handleChange("loanAmount", val)} keyboardType="numeric" />
-            <FormInput label="Processing Fee" value={formData.processingFee} onChangeText={(val:any) => handleChange("processingFee", val)} keyboardType="numeric" />
-            <FormInput label="Interest (%)" value={formData.interest} onChangeText={(val:any) => handleChange("interest", val)} keyboardType="numeric" />
-            <FormInput label="Total Installment" value={formData.totalInstallment} onChangeText={(val:any) => handleChange("totalInstallment", val)} keyboardType="numeric" />
-            <FormInput label="Advance Payment" value={formData.advancePayment} onChangeText={(val:any) => handleChange("advancePayment", val)} keyboardType="numeric" />
+            <FormInput label="Name" value={formData.name} onChangeText={(val: any) => handleChange("name", val)}/>
+            <FormInput label="Customer ID" value={formData.customerId} />
+            <FormInput label="Loan ID" value={formData.loanId}  />
+            <FormInput label="Email" value={formData.email}  />
+            <FormInput label="Phone" value={formData.phone} />
+            <FormInput label="Loan Amount" value={formData.loanAmount} />
+            <FormInput label="Processing Fee" value={formData.processingFee} />
+            <FormInput label="Interest (%)" value={formData.interest} />
+            <FormInput label="Total Installment" value={formData.totalInstallment}  />
+            <FormInput label="Advance Payment" value={formData.advancePayment} />
             <FormInput label="Installment Amount" value={formData.installmentAmount} editable={false} />
 
-            <DatePicker label="Approval Date" value={formData.approvalDate} onChange={(date:any) => handleChange("approvalDate", date)} />
-            <DatePicker label="Repayment Start Date" value={formData.repaymentStartDate} onChange={(date:any) => handleChange("repaymentStartDate", date)} />
+            <DatePicker label="Approval Date" value={formData.approvalDate} />
+            <DatePicker label="Repayment Start Date" value={formData.repaymentStartDate} />
 
-            <FormInput label="Payment Method" value={formData.paymentMethod} onChangeText={(val:any) => handleChange("paymentMethod", val)} />
-            <FormInput label="Repayment Method" value={formData.repaymentMethod} onChangeText={(val:any) => handleChange("repaymentMethod", val)} />
+            <FormInput label="Payment Method" value={formData.paymentMethod} />
+            <FormInput label="Repayment Method" value={formData.repaymentMethod}/>
           </ScrollView>
 
           <View style={styles.footer}>
