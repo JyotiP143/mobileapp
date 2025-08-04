@@ -2,16 +2,20 @@ import { addLoanDetails } from "@/axios/loanApi";
 import { useInvestment } from "@/context/InvestmentContext";
 import { useUser } from "@/context/UserContext";
 import { Ionicons } from "@expo/vector-icons";
-import { format } from "date-fns";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Picker } from "@react-native-picker/picker";
+import { Platform } from "react-native";
+
 import React, { useState } from "react";
 import {
+  FlatList,
   Modal,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { Bounce, toast } from "react-toastify";
 
@@ -21,43 +25,63 @@ interface AddLoanModalProps {
   ownerid: string;
 }
 
-// interface LoanFormData {
-//   name: string;
-//   customerId: string;
-//   loanId: string;
-//   email: string;
-//   phone: string;
-//   loanAmount: string;
-//   processingFee: string;
-//   interest: string;
-//   totalInstallment: string;
-//   installmentAmount: string;
-//   advancePayment: string;
-//   approvalDate: Date;
-//   repaymentStartDate: Date;
-//   paymentMethod: string;
-//   repaymentMethod: string;
-//   owner: string;
-// }
-
-const AddLoanModal: React.FC<AddLoanModalProps> = ({ onClose, visible, ownerid }) => {
+const AddLoanModal: React.FC<AddLoanModalProps> = ({
+  onClose,
+  visible,
+  ownerid,
+}) => {
+  const [showDropdown, setShowDropdown] = useState(false);
   const { setLoanData, userData, loanData } = useUser();
+
+  const [showApprovalDatePicker, setShowApprovalDatePicker] =
+    useState<boolean>(false);
+    const [showRepaymentDatePicker,setShowRepaymentDatePicker]=
+    useState<boolean>(false);
   const { investmentData } = useInvestment();
-
-  // const totalInvestAmount = investmentData?.investments?.reduce((sum:number, inv:any) =>{ return sum + parseFloat(inv.amount)}, 0) || 0;
+  let loanCustId = loanData.map((item) => item.customerId);
+  let loanIds = loanData.map((item) => item.loanId);
+  let loanName = loanData.map((item) => {
+    return {
+      name: item.name,
+      custId: item.customerId,
+      phone: item.phone,
+    };
+  });
   const totalInvestAmount = investmentData?.investments?.length
-    ? investmentData.investments.reduce((total:number, invest:any) => total + parseInt(invest.amount, 10), 0)
+    ? investmentData.investments.reduce(
+        (total: number, invest: any) => total + parseInt(invest.amount, 10),
+        0
+      )
     : 0;
-  const nextCustomerId = `CUST-${(Math.max(...loanData.map(d => parseInt(d.customerId?.split('-')[1] || "1000"))) || 1000) + 1}`;
-  const nextLoanId = `LN-${(Math.max(...loanData.map(d => parseInt(d.loanId?.split('-')[1] || "1000"))) || 1000) + 1}`;
+  const nextCustomerId =
+    loanCustId.length > 0
+      ? Math.max(...loanCustId.map((id) => parseInt(id.replace("CUST-", "")))) +
+        1
+      : 1001;
+  const nextLoanId =
+    loanIds.length > 0
+      ? Math.max(...loanIds.map((id) => parseInt(id.replace("LN-", "")))) + 1
+      : 1001;
 
-
- const userIdString = String(userData.id);
- let intialData = {
-    name: "", customerId: `CUST-${nextCustomerId}`, loanId: `LN-${nextLoanId}`, email: "", phone: "", loanAmount: "", processingFee: "",
-    interest: "", totalInstallment: "", installmentAmount: "0", advancePayment: "0", approvalDate: new Date(),
-    repaymentStartDate: new Date(), paymentMethod: "", repaymentMethod: "monthly", owner: userIdString,
-  }
+  const userIdString = String(userData.id);
+  let intialData = {
+    name: "",
+    customerId: `CUST-${nextCustomerId}`,
+    loanId: `LN-${nextLoanId}`,
+    email: "",
+    phone: "",
+    loanAmount: "",
+    processingFee: "",
+    interest: "",
+    totalInstallment: "",
+    installmentAmount: "",
+    advancePayment: "0",
+    approvalDate: new Date(),
+    repaymentStartDate: new Date(),
+    paymentMethod: "",
+    repaymentMethod: "monthly",
+    owner: userIdString,
+  };
   const [formData, setFormData] = useState(intialData);
   const calculateInstallmentAmount = () => {
     const amount = parseFloat(formData.loanAmount) || 0;
@@ -87,7 +111,8 @@ const AddLoanModal: React.FC<AddLoanModalProps> = ({ onClose, visible, ownerid }
         interestMultiplier = installments / 1;
         break;
     }
-    const totalInterestAmount = (amount * yearlyRate / 100) * interestMultiplier;
+    const totalInterestAmount =
+      ((amount * yearlyRate) / 100) * interestMultiplier;
     const totalWithInterest = principalAfterAdvance;
     const installmentAmount = totalWithInterest / installments;
     return {
@@ -96,130 +121,85 @@ const AddLoanModal: React.FC<AddLoanModalProps> = ({ onClose, visible, ownerid }
       totalInterestAmount: parseFloat(totalInterestAmount.toFixed(2)),
     };
   };
-// {
-//     name: "",
-//     customerId: nextCustomerId,
-//     loanId: nextLoanId,
-//     email: "",
-//     phone: "",
-//     loanAmount: "",
-//     processingFee: "",
-//     interest: "",
-//     totalInstallment: "",
-//     installmentAmount: "0",
-//     advancePayment: "0",
-//     approvalDate: new Date(),
-//     repaymentStartDate: new Date(),
-//     paymentMethod: "",
-//     repaymentMethod: "monthly",
-//     owner: ownerid,
-//   }
-  const [showApprovalPicker, setShowApprovalPicker] = useState(false);
-  const [showRepaymentPicker, setShowRepaymentPicker] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // const calculateInstallmentAmount = () => {
-  //   const amount = parseFloat(formData.loanAmount) || 0;
-  //   const installments = parseInt(formData.totalInstallment) || 1;
-  //   const advance = parseFloat(formData.advancePayment) || 0;
-  //   const interest = parseFloat(formData.interest) || 0;
-
-  //   const method = formData.repaymentMethod.toLowerCase();
-  //   let interestMultiplier = 1;
-
-  //   if (method === "daily") interestMultiplier = installments / 365;
-  //   else if (method === "weekly") interestMultiplier = installments / 52;
-  //   else interestMultiplier = installments / 12;
-
-  //   const totalInterest = ((amount * interest) / 100) * interestMultiplier;
-  //   const principalAfterAdvance = Math.max(0, amount - advance);
-  //   const totalPayable = principalAfterAdvance + totalInterest;
-
-  //   return (totalPayable / installments).toFixed(2);
-  // };
-
-  // const calculateInstallmentAmount = () => {
-  //   const amount = parseFloat(formData.loanAmount) || 0;
-  //   const installments = parseInt(formData.totalInstallment) || 1;
-  //   const advance = parseFloat(formData.advancePayment) || 0;
-  //   const interest = parseFloat(formData.interest) || 0;
-  //   const method = formData.repaymentMethod;
-
-  //   const principalAfterAdvance = Math.max(0, amount - advance);
-  //   let yearlyRate = 0;
-  //   let interestMultiplier = 1;
-  //   switch (method.toLowerCase()) {
-  //     case "daily":
-  //       yearlyRate = interest * 365;
-  //       interestMultiplier = installments / 365;
-  //       break;
-  //     case "weekly":
-  //       yearlyRate = interest * 52;
-  //       interestMultiplier = installments / 52;
-  //       break;
-  //     case "monthly":
-  //       yearlyRate = interest * 12;
-  //       interestMultiplier = installments / 12;
-  //       break;
-  //     default:
-  //       yearlyRate = interest;
-  //       interestMultiplier = installments / 1;
-  //       break;
-  //   }
-  //   const totalInterestAmount = (amount * yearlyRate / 100) * interestMultiplier;
-  //   const totalWithInterest = principalAfterAdvance;
-  //   const installmentAmount = totalWithInterest / installments;
-  //   return {
-  //     installmentAmount: parseFloat(installmentAmount.toFixed(2)),
-  //     yearlyRate: parseFloat(yearlyRate.toFixed(2)),
-  //     totalInterestAmount: parseFloat(totalInterestAmount.toFixed(2)),
-  //   };
-  // };
-  const handleChange = (key: keyof FormData, value: string | Date) => {
-    const updated = { ...formData, [key]: value };
-    if (
-      ["loanAmount", "advancePayment", "interest", "totalInstallment", "repaymentMethod"].includes(key)
-    ) {
-      updated.installmentAmount = calculateInstallmentAmount();
+  const generateEmiHistory = ({
+    startDate,
+    repaymentMethod,
+    totalInstallments,
+    advancePayment,
+  }: any) => {
+    const emiHistory = [];
+    const { installmentAmount } = calculateInstallmentAmount();
+    if (advancePayment > 0) {
+      emiHistory.push({
+        date: new Date(),
+        amount: advancePayment.toFixed(2),
+        transactionId: "AdvPay",
+        paidDate: new Date(startDate).toISOString().split("T")[0],
+        paidStatus: "Paid",
+      });
     }
-    setFormData(updated);
+
+    let currentDate = new Date(startDate);
+
+    for (let i = 1; i <= totalInstallments; i++) {
+      emiHistory.push({
+        date: currentDate.toLocaleDateString("en-CA"),
+        amount: installmentAmount.toFixed(2),
+        transactionId: `TXN${i.toString().padStart(5, "0")}`,
+        paidDate: null,
+        paidStatus: "Due",
+      });
+      switch (repaymentMethod) {
+        case "daily":
+          currentDate.setDate(currentDate.getDate() + 1);
+          break;
+        case "weekly":
+          currentDate.setDate(currentDate.getDate() + 7);
+          break;
+        case "monthly":
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          break;
+      }
+    }
+
+    return emiHistory;
   };
 
-  // const handleSubmit = async () => {
-  //   const requiredFields = [
-  //     "name", "customerId", "loanId", "phone", "loanAmount",
-  //     "processingFee", "interest", "totalInstallment", "paymentMethod",
-  //     "repaymentMethod",
-  //   ];
-  //   const missingFields = requiredFields.filter(field => !formData[field as keyof LoanFormData]);
-  //   if (missingFields.length > 0) {
-  //     Alert.alert("Missing Fields", `Please fill all required fields.`);
-  //     return;
-  //   }
-  //   if (parseFloat(formData.loanAmount) > totalInvestAmount) {
-  //     Alert.alert("Error", "Loan amount exceeds total investment.");
-  //     return;
-  //   }
+  const handleSelectName = ({ name, id, phone }: any) => {
+    handleInputChange("name", name);
+    handleInputChange("customerId", id);
+    handleInputChange("phone", phone);
+    setShowDropdown(false);
+  };
+  const { installmentAmount, yearlyRate, totalInterestAmount } =
+    calculateInstallmentAmount();
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value };
+      calculateInstallmentAmount();
+      const { installmentAmount } = calculateInstallmentAmount();
+      const emiHistory =
+        newData.repaymentStartDate &&
+        newData.repaymentMethod &&
+        newData.totalInstallment
+          ? generateEmiHistory({
+              startDate: new Date(newData.repaymentStartDate),
+              repaymentMethod: newData.repaymentMethod,
+              totalInstallments: parseInt(newData.totalInstallment),
+              advancePayment: parseFloat(newData.advancePayment) || 0,
+            })
+          : [];
+      return {
+        ...newData,
+        installmentAmount: installmentAmount.toString(),
+        emiHistory,
+      };
+    });
+  };
 
-  //   setIsSubmitting(true);
-  //   try {
-  //     const res = await addLoanDetails(formData) as any;
-  //     if (res.success) {
-  //       setLoanData((prev) => [...prev, res.data]);
-  //       setFormData(prev => ({ ...prev, name: "", email: "", phone: "", loanAmount: "", processingFee: "", interest: "", totalInstallment: "", advancePayment: "0", installmentAmount: "0" }));
-  //       onClose();
-  //     } else {
-  //       Alert.alert("Error", "Failed to add loan.");
-  //     }
-  //   } catch (err) {
-  //     console.error("Loan Submit Error:", err);
-  //     Alert.alert("Error", "Something went wrong.");
-  //   } finally {
-  //     setIsSubmitting(false);
-  //   }
-  // };
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleSubmit = async () => {
+  const handleSubmit = async () => {
     const requiredFields = [
       "name",
       "customerId",
@@ -237,20 +217,25 @@ const AddLoanModal: React.FC<AddLoanModalProps> = ({ onClose, visible, ownerid }
       "repaymentMethod",
     ];
 
-    const missingFields = requiredFields.filter((field) => !formData[field as keyof typeof formData]);
+    const missingFields = requiredFields.filter(
+      (field) => !formData[field as keyof typeof formData]
+    );
 
     if (missingFields.length > 0) {
-      toast.error(`Please fill all required fields: ${missingFields.join(", ")}`, {
-        position: "top-center",
-        autoClose: 1500,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: false,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-        transition: Bounce,
-      });
+      toast.error(
+        `Please fill all required fields: ${missingFields.join(", ")}`,
+        {
+          position: "top-center",
+          autoClose: 1500,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        }
+      );
       setIsSubmitting(false);
       return;
     }
@@ -272,8 +257,7 @@ const AddLoanModal: React.FC<AddLoanModalProps> = ({ onClose, visible, ownerid }
           theme: "light",
           transition: Bounce,
         });
-      }
-      else {
+      } else {
         const response = await addLoanDetails(formData);
         if (response.success) {
           setLoanData((prevLoans) =>
@@ -321,92 +305,522 @@ const AddLoanModal: React.FC<AddLoanModalProps> = ({ onClose, visible, ownerid }
         theme: "light",
         transition: Bounce,
       });
-    }
-    finally {
+    } finally {
       setIsSubmitting(false);
     }
   };
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          <View style={styles.header}>
-            <Text style={styles.headerText}>Add Loan</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.formContainer} contentContainerStyle={{ paddingBottom: 20 }}>
-            <FormInput label="Name" value={formData.name} onChangeText={(val: any) => handleChange("name", val)}/>
-            <FormInput label="Customer ID" value={formData.customerId} />
-            <FormInput label="Loan ID" value={formData.loanId}  />
-            <FormInput label="Email" value={formData.email}  />
-            <FormInput label="Phone" value={formData.phone} />
-            <FormInput label="Loan Amount" value={formData.loanAmount} />
-            <FormInput label="Processing Fee" value={formData.processingFee} />
-            <FormInput label="Interest (%)" value={formData.interest} />
-            <FormInput label="Total Installment" value={formData.totalInstallment}  />
-            <FormInput label="Advance Payment" value={formData.advancePayment} />
-            <FormInput label="Installment Amount" value={formData.installmentAmount} editable={false} />
-
-            <DatePicker label="Approval Date" value={formData.approvalDate} />
-            <DatePicker label="Repayment Start Date" value={formData.repaymentStartDate} />
-
-            <FormInput label="Payment Method" value={formData.paymentMethod} />
-            <FormInput label="Repayment Method" value={formData.repaymentMethod}/>
-          </ScrollView>
-
-          <View style={styles.footer}>
-            <TouchableOpacity onPress={onClose} style={styles.cancelBtn}>
-              <Text style={styles.btnText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleSubmit} style={styles.submitBtn} disabled={isSubmitting}>
-              <Text style={styles.btnText}>{isSubmitting ? "Submitting..." : "Submit"}</Text>
-            </TouchableOpacity>
-          </View>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+    >
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Add Loan Details</Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Ionicons name="close" size={24} color="#374151" />
+          </TouchableOpacity>
         </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.formContainer}>
+            {/* Name Field with Dropdown */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Name <Text style={styles.required}>*</Text>
+              </Text>
+              <TouchableOpacity onPress={() => setShowDropdown(!showDropdown)}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Select or Enter Name"
+                  value={formData.name}
+                  onChangeText={(text) => handleInputChange("name", text)}
+                  editable={!showDropdown}
+                />
+              </TouchableOpacity>
+              {showDropdown && (
+                <View style={styles.dropdown}>
+                  <FlatList
+                    data={loanName.filter(
+                      (item, index, self) =>
+                        index ===
+                        self.findIndex((t) => t.custId === item.custId)
+                    )}
+                    keyExtractor={(item, index) => index.toString()}
+                    renderItem={({ item, index }) => (
+                      <TouchableOpacity
+                        onPress={() => handleSelectName(item.name)}
+                        // , item.custId, item.phone
+                        style={styles.dropdownList}
+                      >
+                        <Text>{item.name}</Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+                </View>
+              )}
+            </View>
+
+            {/* Customer ID */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Customer ID <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                style={[styles.input, styles.readOnlyInput]}
+                value={formData.customerId}
+                placeholder="CUST-1001"
+                editable={false}
+              />
+            </View>
+
+            {/* Loan ID */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Loan ID <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                style={[styles.input, styles.readOnlyInput]}
+                placeholder="LN-85954"
+                value={formData.loanId}
+                editable={false}
+              />
+            </View>
+
+            {/* Email */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter the Email"
+                value={formData.email}
+                onChangeText={(text) =>
+                  handleInputChange("email", text.toLowerCase())
+                }
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            {/* Phone */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Phone <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter Phone Number"
+                value={formData.phone}
+                onChangeText={(text) => handleInputChange("phone", text)}
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            {/* Loan Amount */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Loan Amount <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter Loan Amount"
+                value={formData.loanAmount}
+                onChangeText={(text) => handleInputChange("loanAmount", text)}
+                keyboardType="numeric"
+              />
+            </View>
+
+            {/* Processing Fee */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Processing Fee (In Amount){" "}
+                <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter Processing Fee"
+                value={formData.processingFee}
+                onChangeText={(text) =>
+                  handleInputChange("processingFee", text)
+                }
+                keyboardType="numeric"
+              />
+            </View>
+
+            {/* Interest */}
+            <View style={styles.inputGroup}>
+              <View style={styles.interestHeader}>
+                <Text style={styles.label}>
+                  Interest (%) <Text style={styles.required}>*</Text>
+                </Text>
+                <Text style={styles.label}>Interest Amount</Text>
+              </View>
+              <View style={styles.interestRow}>
+                <TextInput
+                  style={[styles.input, styles.interestInput]}
+                  placeholder="Enter Interest Rate"
+                  value={formData.interest}
+                  onChangeText={(text) => handleInputChange("interest", text)}
+                  keyboardType="numeric"
+                />
+                <View style={[styles.input, styles.interestAmountDisplay]}>
+                  <Text style={styles.interestAmountText}>
+                    {totalInterestAmount}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.interestInfo}>
+                Yearly Interest: {formData.interest} x{" "}
+                {formData.repaymentMethod === "monthly"
+                  ? "12"
+                  : formData.repaymentMethod === "weekly"
+                  ? "52"
+                  : "365"}{" "}
+                = {yearlyRate}%
+              </Text>
+            </View>
+
+            {/* Repayment Method */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Repayment Method <Text style={styles.required}>*</Text>
+              </Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={formData.repaymentMethod}
+                  onValueChange={(value) =>
+                    handleInputChange("repaymentMethod", value)
+                  }
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Monthly" value="monthly" />
+                  <Picker.Item label="Weekly" value="weekly" />
+                  <Picker.Item label="Daily" value="daily" />
+                </Picker>
+              </View>
+            </View>
+
+            {/* Total Installment */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Total Installment <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter Total Installment"
+                value={formData.totalInstallment}
+                onChangeText={(text) =>
+                  handleInputChange("totalInstallment", text)
+                }
+                keyboardType="numeric"
+              />
+            </View>
+
+            {/* Advance Payment */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Advance Payment</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter Advance Payment"
+                value={formData.advancePayment}
+                onChangeText={(text) =>
+                  handleInputChange("advancePayment", text)
+                }
+                keyboardType="numeric"
+              />
+            </View>
+
+            {/* Installment Amount */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Installment Amount <Text style={styles.required}>*</Text>
+              </Text>
+              <TextInput
+                style={[styles.input, styles.readOnlyInput]}
+                value={formData.installmentAmount}
+                editable={false}
+              />
+            </View>
+
+            {/* Approval Date */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Loan Approval Date <Text style={styles.required}>*</Text>
+              </Text>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setShowApprovalDatePicker(true)}
+              >
+                <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+                <Text style={styles.dateButtonText}>
+                  {formData.approvalDate.toLocaleDateString("en-CA")}
+                </Text>
+              </TouchableOpacity>
+              {showApprovalDatePicker && (
+                <DateTimePicker
+                  value={formData.approvalDate}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={(event, selectedDate) => {
+                    setShowApprovalDatePicker(Platform.OS === "ios");
+                  //   if (selectedDate) {
+                  //     handleInputChange("approvalDate", selectedDate);
+                  //   }
+                   }
+                  }
+                />
+              )}
+            </View>
+
+            {/* Repayment Start Date */}
+           <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Repayment Start Date <Text style={styles.required}>*</Text>
+              </Text>
+              <TouchableOpacity style={styles.dateButton} onPress={() => setShowRepaymentDatePicker(true)}>
+                <Ionicons name="calendar-outline" size={20} color="#6B7280" />
+                <Text style={styles.dateButtonText}>{formData.repaymentStartDate.toLocaleDateString("en-CA")}</Text>
+              </TouchableOpacity>
+              {showRepaymentDatePicker && (
+                <DateTimePicker
+                  value={formData.repaymentStartDate}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={(event, selectedDate) => {
+                    setShowRepaymentDatePicker(Platform.OS === "ios")
+                    // if (selectedDate) {
+                    //   handleInputChange("repaymentStartDate", selectedDate)
+                    // }
+                  }}
+                />
+              )}
+            </View> 
+
+            {/* Payment Method */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Payment Method <Text style={styles.required}>*</Text>
+              </Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={formData.paymentMethod}
+                  onValueChange={(value) =>
+                    handleInputChange("paymentMethod", value)
+                  }
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Select payment method" value="" />
+                  <Picker.Item label="Cash" value="Cash" />
+                  <Picker.Item label="Bank Transfer" value="Bank Transfer" />
+                  <Picker.Item label="UPI Transfer" value="Upi Transfer" />
+                </Picker>
+              </View>
+            </View>
+          </View>
+
+          {/* Action Buttons */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+              <Text style={styles.cancelButtonText}>Close</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.submitButton,
+                isSubmitting && styles.submitButtonDisabled,
+              ]}
+              onPress={handleSubmit}
+              disabled={isSubmitting}
+            >
+              <Text style={styles.submitButtonText}>
+                {isSubmitting ? "Submitting..." : "Submit"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </View>
     </Modal>
   );
 };
 
-const FormInput = ({ label, value, onChangeText,customerId,loanId, editable = true, keyboardType = "default" }:any) => (
-  <View style={styles.inputContainer}>
-    <Text style={styles.label}>{label}</Text>
-    <TextInput
-      style={[styles.input, !editable && { backgroundColor: "#f2f2f2" }]}
-      value={value}
-      onChangeText={onChangeText}
-      editable={editable}
-      keyboardType={keyboardType}
-    />
-  </View>
-);
-
-const DatePicker = ({ label, value, onChange }:any) => (
-  <View style={styles.inputContainer}>
-    <Text style={styles.label}>{label}</Text>
-    <TouchableOpacity onPress={() => onChange(new Date())} style={styles.datePicker}>
-      <Text>{format(value, "PPP")}</Text>
-    </TouchableOpacity>
-  </View>
-);
-
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" },
-  modalContainer: { backgroundColor: "#fff", width: "90%", borderRadius: 10, maxHeight: "90%" },
-  header: { backgroundColor: "#2563eb", padding: 15, borderTopLeftRadius: 10, borderTopRightRadius: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  headerText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  formContainer: { paddingHorizontal: 16 },
-  inputContainer: { marginVertical: 8 },
-  label: { fontSize: 14, fontWeight: "500", marginBottom: 4 },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 6, padding: 10 },
-  datePicker: { borderWidth: 1, borderColor: "#ccc", borderRadius: 6, padding: 10 },
-  footer: { flexDirection: "row", justifyContent: "flex-end", padding: 16 },
-  cancelBtn: { backgroundColor: "#ccc", padding: 10, borderRadius: 6, marginRight: 10 },
-  submitBtn: { backgroundColor: "#22c55e", padding: 10, borderRadius: 6 },
-  btnText: { color: "#fff", fontWeight: "600" },
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1E40AF",
+  },
+  closeButton: {
+    padding: 4,
+    borderRadius: 20,
+    backgroundColor: "#F3F4F6",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  formContainer: {
+    padding: 20,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#374151",
+    marginBottom: 8,
+  },
+  required: {
+    color: "#EF4444",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: "#FFFFFF",
+  },
+  readOnlyInput: {
+    backgroundColor: "#F9FAFB",
+    color: "#6B7280",
+  },
+  dropdown: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 8,
+    maxHeight: 160,
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  dropdownList: {
+    maxHeight: 160,
+  },
+  dropdownItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: "#374151",
+    textTransform: "capitalize",
+  },
+  interestHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  interestRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  interestInput: {
+    flex: 1,
+  },
+  interestAmountDisplay: {
+    flex: 1,
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+  },
+  interestAmountText: {
+    fontSize: 16,
+    color: "#374151",
+  },
+  interestInfo: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 4,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+  },
+  picker: {
+    height: 50,
+  },
+  dateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: "#374151",
+    marginLeft: 8,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+  },
+  cancelButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    backgroundColor: "#FFFFFF",
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#374151",
+  },
+  submitButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: "#16A34A",
+  },
+  submitButtonDisabled: {
+    backgroundColor: "#9CA3AF",
+  },
+  submitButtonText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#FFFFFF",
+  },
 });
 
 export default AddLoanModal;

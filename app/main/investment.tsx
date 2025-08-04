@@ -1,120 +1,107 @@
-"use client"
+"use client";
 
-import { deleteInvestment, invest_Withdraw } from "@/axios/investWithdraw"
-import { useInvestment } from "@/context/InvestmentContext"
-import type { EditFormData, FormData, Investment } from "@/types/investment"
-import { MaterialIcons } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
-import jsPDF from "jspdf"
-import autoTable from "jspdf-autotable"
-import type React from "react"
-import { useEffect, useState } from "react"
+import { deleteInvestment, invest_Withdraw } from "@/axios/investWithdraw";
+import { useInvestment } from "@/context/InvestmentContext";
+import type { EditFormData, FormData, Investment } from "@/types/investment";
+import { MaterialIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import type React from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
-} from "react-native"
+} from "react-native";
 
-const { width, height } = Dimensions.get("window")
+const { width, height } = Dimensions.get("window");
 
 const InvestmentMobile = () => {
   const initialData = { amount: "", remark: "", date: "" };
-  const editInitialData = { wid: "", amount: "", remark: "", date: "", email: "" };
+  const editInitialData = {
+    wid: "",
+    amount: "",
+    remark: "",
+    date: "",
+    email: "",
+  };
 
-  const [formData, setFormData] = useState(initialData)
-  const [editFormData, setEditFormData] = useState(editInitialData)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [entriesPerPage, setEntriesPerPage] = useState("25")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [formData, setFormData] = useState(initialData);
+  const [editFormData, setEditFormData] = useState(editInitialData);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [entriesPerPage, setEntriesPerPage] = useState("25");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
-  const [selectAll, setSelectAll] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [showFilterModal, setShowFilterModal] = useState(false)
-  const [refreshing, setRefreshing] = useState(false)
+  const [selectAll, setSelectAll] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { setInvestmentData, investmentData, loading } = useInvestment()
+  const { setInvestmentData, investmentData, loading } = useInvestment();
 
-  let investments = []
+  let investments = [];
   if (!loading && investmentData?.investments) {
-    investments = investmentData.investments
+    investments = investmentData.investments;
   }
 
   const filteredLoans = investments?.filter((loan: Investment) => {
-    const matchesSearch = loan.remark.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = loan.remark
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
     const matchesStatus =
-      statusFilter === "all" ? true : (loan.status?.toLowerCase() || "active") === statusFilter.toLowerCase()
-    return matchesSearch && matchesStatus
-  })
+      statusFilter === "all"
+        ? true
+        : (loan.status?.toLowerCase() || "active") ===
+          statusFilter.toLowerCase();
+    return matchesSearch && matchesStatus;
+  });
 
   useEffect(() => {
-    setTotalPages(Math.ceil(filteredLoans?.length / Number.parseInt(entriesPerPage)))
-  }, [filteredLoans, entriesPerPage])
+    setTotalPages(
+      Math.ceil(filteredLoans?.length / Number.parseInt(entriesPerPage))
+    );
+  }, [filteredLoans, entriesPerPage]);
 
   const getCurrentPageItems = (): Investment[] => {
-    const startIndex = (currentPage - 1) * Number.parseInt(entriesPerPage)
-    const endIndex = startIndex + Number.parseInt(entriesPerPage)
-    return filteredLoans?.slice(startIndex, endIndex) || []
-  }
+    const startIndex = (currentPage - 1) * Number.parseInt(entriesPerPage);
+    const endIndex = startIndex + Number.parseInt(entriesPerPage);
+    return filteredLoans?.slice(startIndex, endIndex) || [];
+  };
 
   const formatDate = (dateString: string): string => {
-    const date = new Date(dateString)
-    const day = date.getDate()
-    const month = date.toLocaleString("en-GB", { month: "short" })
-    const year = date.getFullYear()
-    return `${day}-${month}-${year}`
-  }
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const month = date.toLocaleString("en-GB", { month: "short" });
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
 
-  const handleChange = (name: keyof FormData, value: string): void => {
-    setFormData({ ...formData, [name]: value })
-  }
-
-  // const handleSubmit = async ()=> {
-  //   setIsSubmitting(true)
-  //   if (!formData.amount || !formData.date) {
-  //     Alert.alert("Error", "Please fill in all required fields")
-  //     setIsSubmitting(false)
-  //     return ;
-  //   }
-  //   const email = investmentData.email
-  //   const requestData = {
-  //     email,
-  //     investments: { ...formData },
-  //   }
-  //   try {
-  //     const response = await invest_Withdraw(requestData) as any
-  //     console.log("API response:", response);
-  //     if (response.success) {
-  //       setIsSubmitting(false)
-  //       setIsModalOpen(false)
-  //       setFormData(initialData)
-  //       setInvestmentData((prevData:any) => {
-  //         const updatedInvestments = [...prevData.investments, formData as Investment]
-  //         return {
-  //           ...prevData,
-  //           investments: updatedInvestments,
-  //         }
-  //       })
-  //       Alert.alert("Success", "Investment added successfully!")
-  //     }
-  //   } catch (error) {
-  //     Alert.alert("Error", "Failed to add investment")
-  //     setIsSubmitting(false)
-  //   }
+  // const handleChange = (name: keyof FormData, value: string): void => {
+  //   setFormData({ ...formData, [name]: value })
   // }
-
+  const handleChange = (name: keyof FormData, value: string): void => {
+    if (formData[name] !== value) {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -130,11 +117,11 @@ const InvestmentMobile = () => {
       },
     };
     try {
-      const response = await invest_Withdraw(requestData) as any;
+      const response = (await invest_Withdraw(requestData)) as any;
       if (response.success) {
         setIsSubmitting(false);
         setIsModalOpen(false);
-        setInvestmentData((prevData :any) => {
+        setInvestmentData((prevData: any) => {
           const updatedWithdrawals = [...prevData.investments, formData];
           return {
             ...prevData,
@@ -142,164 +129,191 @@ const InvestmentMobile = () => {
           };
         });
       }
-    } catch (error) { }
+    } catch (error) {}
   };
 
   const downloadPDF = (): void => {
-    const doc = new jsPDF()
-    doc.text("Investment Records", 14, 10)
-    const tableColumn = ["Date", "Amount", "Remarks"]
-    const tableRows: string[][] = []
+    const doc = new jsPDF();
+    doc.text("Investment Records", 14, 10);
+    const tableColumn = ["Date", "Amount", "Remarks"];
+    const tableRows: string[][] = [];
 
     getCurrentPageItems().forEach((investment: Investment) => {
-      const rowData = [formatDate(investment.date), `₹ ${investment.amount}`, investment.remark || "-"]
-      tableRows.push(rowData)
-    })
+      const rowData = [
+        formatDate(investment.date),
+        `₹ ${investment.amount}`,
+        investment.remark || "-",
+      ];
+      tableRows.push(rowData);
+    });
 
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 20,
-    })
+    });
 
-    doc.save("investment-records.pdf")
-  }
+    doc.save("investment-records.pdf");
+  };
 
   const editHandleChange = (name: keyof EditFormData, value: string): void => {
-    setEditFormData({ ...editFormData, [name]: value })
-  }
+    setEditFormData({ ...editFormData, [name]: value });
+  };
 
   const editHandleSubmit = async (): Promise<void> => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     if (!editFormData.amount || !editFormData.date) {
-      Alert.alert("Error", "Please fill in all required fields")
-      setIsSubmitting(false)
-      return
+      Alert.alert("Error", "Please fill in all required fields");
+      setIsSubmitting(false);
+      return;
     }
 
-    const email = investmentData.email
+    const email = investmentData.email;
     const requestData = {
       email,
       investments: { ...editFormData },
-    }
+    };
 
     try {
-      const response = await invest_Withdraw(requestData) as any
+      const response = (await invest_Withdraw(requestData)) as any;
       if (response.success) {
         setInvestmentData((prevData: any) => {
-  const updatedInvestments = prevData.investments.some(
-    (inv: Investment) => inv._id === editFormData.wid
-  )
-    ? prevData.investments.map((inv: Investment) =>
-        inv._id === editFormData.wid
-          ? { ...inv, ...editFormData, _id: editFormData.wid }
-          : inv
-      )
-    : [...prevData.investments, { ...editFormData, _id: editFormData.wid } as Investment];
+          const updatedInvestments = prevData.investments.some(
+            (inv: Investment) => inv._id === editFormData.wid
+          )
+            ? prevData.investments.map((inv: Investment) =>
+                inv._id === editFormData.wid
+                  ? { ...inv, ...editFormData, _id: editFormData.wid }
+                  : inv
+              )
+            : [
+                ...prevData.investments,
+                { ...editFormData, _id: editFormData.wid } as Investment,
+              ];
 
-  return {
-    ...prevData,
-    investments: updatedInvestments,
-  };
-});
+          return {
+            ...prevData,
+            investments: updatedInvestments,
+          };
+        });
 
-        setIsEditModalOpen(false)
-        setIsSubmitting(false)
-        Alert.alert("Success", "Investment updated successfully!")
+        setIsEditModalOpen(false);
+        setIsSubmitting(false);
+        Alert.alert("Success", "Investment updated successfully!");
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to update investment")
+      Alert.alert("Error", "Failed to update investment");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleSelectAll = (): void => {
     if (selectAll) {
-      setSelectedRows([])
+      setSelectedRows([]);
     } else {
-      setSelectedRows(investments.map((row: Investment) => row._id))
+      setSelectedRows(investments.map((row: Investment) => row._id));
     }
-    setSelectAll(!selectAll)
-  }
+    setSelectAll(!selectAll);
+  };
 
   const handleRowSelect = (id: string): void => {
-    let updatedSelection: string[] = []
+    let updatedSelection: string[] = [];
     if (selectedRows.includes(id)) {
-      updatedSelection = selectedRows.filter((rowId: string) => rowId !== id)
+      updatedSelection = selectedRows.filter((rowId: string) => rowId !== id);
     } else {
-      updatedSelection = [...selectedRows, id]
+      updatedSelection = [...selectedRows, id];
     }
-    setSelectedRows(updatedSelection)
-    setSelectAll(updatedSelection.length === investments.length)
-  }
+    setSelectedRows(updatedSelection);
+    setSelectAll(updatedSelection.length === investments.length);
+  };
 
   const handleDelete = async (): Promise<void> => {
-    Alert.alert("Confirm Delete", `Are you sure you want to delete ${selectedRows.length} investment(s)?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          setIsDeleting(true)
-          try {
-            const response = await deleteInvestment({
-              ids: selectedRows,
-              email: investmentData.email,
-            }) as any
-            if (response.success) {
-              setInvestmentData((prevData:any) => ({
-                ...prevData,
-                investments: prevData.investments.filter(
-                  (investment: Investment) => !selectedRows.includes(investment._id),
-                ),
-              }))
-              setSelectedRows([])
-              setSelectAll(false)
-              Alert.alert("Success", response.message)
-            } else {
-              Alert.alert("Error", response.message)
+    Alert.alert(
+      "Confirm Delete",
+      `Are you sure you want to delete ${selectedRows.length} investment(s)?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              const response = (await deleteInvestment({
+                ids: selectedRows,
+                email: investmentData.email,
+              })) as any;
+              if (response.success) {
+                setInvestmentData((prevData: any) => ({
+                  ...prevData,
+                  investments: prevData.investments.filter(
+                    (investment: Investment) =>
+                      !selectedRows.includes(investment._id)
+                  ),
+                }));
+                setSelectedRows([]);
+                setSelectAll(false);
+                Alert.alert("Success", response.message);
+              } else {
+                Alert.alert("Error", response.message);
+              }
+            } catch (error) {
+              Alert.alert("Error", "Failed to delete investments");
+            } finally {
+              setIsDeleting(false);
             }
-          } catch (error) {
-            Alert.alert("Error", "Failed to delete investments")
-          } finally {
-            setIsDeleting(false)
-          }
+          },
         },
-      },
-    ])
-  }
+      ]
+    );
+  };
 
   const onRefresh = (): void => {
-    setRefreshing(true)
+    setRefreshing(true);
     // Add your refresh logic here
     setTimeout(() => {
-      setRefreshing(false)
-    }, 2000)
-  }
+      setRefreshing(false);
+    }, 2000);
+  };
 
-  const InvestmentCard: React.FC<{ investment: Investment; index: number }> = ({ investment, index }) => (
+  const InvestmentCard: React.FC<{ investment: Investment; index: number }> = ({
+    investment,
+    index,
+  }) => (
     <View style={styles.cardContainer}>
-      <LinearGradient colors={["rgba(59, 130, 246, 0.1)", "rgba(147, 51, 234, 0.1)"]} style={styles.card}>
+      <LinearGradient
+        colors={["rgba(59, 130, 246, 0.1)", "rgba(147, 51, 234, 0.1)"]}
+        style={styles.card}
+      >
         <View style={styles.cardHeader}>
-          <TouchableOpacity style={styles.checkbox} onPress={() => handleRowSelect(investment._id)}>
+          <TouchableOpacity
+            style={styles.checkbox}
+            onPress={() => handleRowSelect(investment._id)}
+          >
             <MaterialIcons
-              name={selectedRows.includes(investment._id) ? "check-box" : "check-box-outline-blank"}
+              name={
+                selectedRows.includes(investment._id)
+                  ? "check-box"
+                  : "check-box-outline-blank"
+              }
               size={24}
-              color={selectedRows.includes(investment._id) ? "#3b82f6" : "#9ca3af"}
+              color={
+                selectedRows.includes(investment._id) ? "#3b82f6" : "#9ca3af"
+              }
             />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.editButton}
             onPress={() => {
-              setIsEditModalOpen(true)
+              setIsEditModalOpen(true);
               setEditFormData({
                 ...editFormData,
                 wid: investment._id,
                 amount: investment.amount,
                 remark: investment.remark,
                 date: investment.date,
-              })
+              });
             }}
           >
             <MaterialIcons name="edit" size={20} color="#3b82f6" />
@@ -320,7 +334,9 @@ const InvestmentMobile = () => {
               <MaterialIcons name="attach-money" size={20} color="#10b981" />
               <Text style={styles.fieldLabel}>Amount</Text>
             </View>
-            <Text style={[styles.fieldValue, styles.amountText]}>₹ {investment.amount}</Text>
+            <Text style={[styles.fieldValue, styles.amountText]}>
+              ₹ {investment.amount}
+            </Text>
           </View>
 
           <View style={styles.cardRow}>
@@ -335,49 +351,78 @@ const InvestmentMobile = () => {
         </View>
       </LinearGradient>
     </View>
-  )
+  );
 
   const LoadingCard: React.FC = () => (
     <View style={styles.cardContainer}>
-      <LinearGradient colors={["rgba(107, 114, 128, 0.1)", "rgba(75, 85, 99, 0.1)"]} style={styles.card}>
+      <LinearGradient
+        colors={["rgba(107, 114, 128, 0.1)", "rgba(75, 85, 99, 0.1)"]}
+        style={styles.card}
+      >
         <View style={styles.loadingContent}>
           <ActivityIndicator size="large" color="#3b82f6" />
           <Text style={styles.loadingText}>Loading...</Text>
         </View>
       </LinearGradient>
     </View>
-  )
+  );
 
   const FilterModal: React.FC = () => (
-    <Modal visible={showFilterModal} transparent animationType="slide" onRequestClose={() => setShowFilterModal(false)}>
+    <Modal
+      visible={showFilterModal}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setShowFilterModal(false)}
+    >
       <View style={styles.modalOverlay}>
-        <LinearGradient colors={["#1e293b", "#334155"]} style={styles.filterModalContent}>
+        <LinearGradient
+          colors={["#1e293b", "#334155"]}
+          style={styles.filterModalContent}
+        >
           <Text style={styles.filterTitle}>Filter by Status</Text>
           {["all", "active", "completed"].map((filter) => (
             <TouchableOpacity
               key={filter}
-              style={[styles.filterOption, statusFilter === filter && styles.filterOptionActive]}
+              style={[
+                styles.filterOption,
+                statusFilter === filter && styles.filterOptionActive,
+              ]}
               onPress={() => {
-                setStatusFilter(filter)
-                setShowFilterModal(false)
+                setStatusFilter(filter);
+                setShowFilterModal(false);
               }}
             >
-              <Text style={[styles.filterOptionText, statusFilter === filter && styles.filterOptionTextActive]}>
+              <Text
+                style={[
+                  styles.filterOptionText,
+                  statusFilter === filter && styles.filterOptionTextActive,
+                ]}
+              >
                 {filter.charAt(0).toUpperCase() + filter.slice(1)}
               </Text>
-              {statusFilter === filter && <MaterialIcons name="check" size={20} color="#10b981" />}
+              {statusFilter === filter && (
+                <MaterialIcons name="check" size={20} color="#10b981" />
+              )}
             </TouchableOpacity>
           ))}
-          <TouchableOpacity style={styles.filterCloseButton} onPress={() => setShowFilterModal(false)}>
+          <TouchableOpacity
+            style={styles.filterCloseButton}
+            onPress={() => setShowFilterModal(false)}
+          >
             <Text style={styles.filterCloseText}>Close</Text>
           </TouchableOpacity>
         </LinearGradient>
       </View>
     </Modal>
-  )
+  );
 
   const AddInvestmentModal: React.FC = () => (
-    <Modal visible={isModalOpen} transparent animationType="slide" onRequestClose={() => setIsModalOpen(false)}>
+    <Modal
+      visible={isModalOpen}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setIsModalOpen(false)}
+    >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
@@ -386,59 +431,73 @@ const InvestmentMobile = () => {
               <MaterialIcons name="close" size={24} color="#6b7280" />
             </TouchableOpacity>
           </View>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <ScrollView contentContainerStyle={styles.modalForm} keyboardShouldPersistTaps="handled">
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>
+                    Amount<Text style={styles.required}>*</Text>
+                  </Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Enter the amount"
+                    value={formData.amount}
+                    onChangeText={(value) => handleChange("amount", value)}
+                    keyboardType="numeric"
+                  />
+                </View>
 
-          <ScrollView style={styles.modalForm}>
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>
-                Amount<Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={styles.formInput}
-                placeholder="Enter the amount"
-                value={formData.amount}
-                onChangeText={(value) => handleChange("amount", value)}
-                keyboardType="numeric"
-              />
-            </View>
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Remarks</Text>
+                  <TextInput
+                    style={[styles.formInput, styles.textArea]}
+                    placeholder="Optional remarks"
+                    value={formData.remark}
+                    onChangeText={(value) => handleChange("remark", value)}
+                    multiline
+                    numberOfLines={3}
+                  />
+                </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Remarks</Text>
-              <TextInput
-                style={[styles.formInput, styles.textArea]}
-                placeholder="Optional remarks"
-                value={formData.remark}
-                onChangeText={(value) => handleChange("remark", value)}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>
-                Date <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={styles.formInput}
-                placeholder="dd/mm/yyyy"
-                value={formData.date}
-                onChangeText={(value) => handleChange("date", value)}
-              />
-            </View>
-          <TouchableOpacity
-            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={isSubmitting}
-          >
-            <Text style={styles.submitButtonText}>{isSubmitting ? "Submitting..." : "Submit"}</Text>
-          </TouchableOpacity>
-</ScrollView>
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>
+                    Date <Text style={styles.required}>*</Text>
+                  </Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="dd/mm/yyyy"
+                    value={formData.date}
+                    onChangeText={(value) => handleChange("date", value)}
+                  />
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.submitButton,
+                    isSubmitting && styles.submitButtonDisabled,
+                  ]}
+                  onPress={handleSubmit}
+                  disabled={isSubmitting}
+                >
+                  <Text style={styles.submitButtonText}>
+                    {isSubmitting ? "Submitting..." : "Submit"}
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
         </View>
       </View>
     </Modal>
-  )
+  );
 
   const EditInvestmentModal: React.FC = () => (
-    <Modal visible={isEditModalOpen} transparent animationType="slide" onRequestClose={() => setIsEditModalOpen(false)}>
+    <Modal
+      visible={isEditModalOpen}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setIsEditModalOpen(false)}
+    >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
@@ -447,69 +506,85 @@ const InvestmentMobile = () => {
               <MaterialIcons name="close" size={24} color="#6b7280" />
             </TouchableOpacity>
           </View>
+          {/* <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+          >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
+              <ScrollView style={styles.modalForm}>
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>
+                    Amount <Text style={styles.required}>*</Text>
+                  </Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Enter the amount"
+                    value={editFormData.amount}
+                    onChangeText={(value) => editHandleChange("amount", value)}
+                    keyboardType="numeric"
+                  />
+                </View>
 
-          <ScrollView style={styles.modalForm}>
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>
-                Amount <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={styles.formInput}
-                placeholder="Enter the amount"
-                value={editFormData.amount}
-                onChangeText={(value) => editHandleChange("amount", value)}
-                keyboardType="numeric"
-              />
-            </View>
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Remarks</Text>
+                  <TextInput
+                    style={[styles.formInput, styles.textArea]}
+                    placeholder="Optional remarks"
+                    value={editFormData.remark}
+                    onChangeText={(value) => editHandleChange("remark", value)}
+                    multiline
+                    numberOfLines={3}
+                  />
+                </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Remarks</Text>
-              <TextInput
-                style={[styles.formInput, styles.textArea]}
-                placeholder="Optional remarks"
-                value={editFormData.remark}
-                onChangeText={(value) => editHandleChange("remark", value)}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>
-                Date <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={styles.formInput}
-                placeholder="dd/mm/yyyy"
-                value={editFormData.date}
-                onChangeText={(value) => editHandleChange("date", value)}
-              />
-            </View>
-          </ScrollView>
-
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>
+                    Date <Text style={styles.required}>*</Text>
+                  </Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="dd/mm/yyyy"
+                    value={editFormData.date}
+                    onChangeText={(value) => editHandleChange("date", value)}
+                  />
+                </View>
+              </ScrollView>
+            {/* </TouchableWithoutFeedback>
+          </KeyboardAvoidingView> */}
           <TouchableOpacity
-            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+            style={[
+              styles.submitButton,
+              isSubmitting && styles.submitButtonDisabled,
+            ]}
             onPress={editHandleSubmit}
             disabled={isSubmitting}
           >
-            <Text style={styles.submitButtonText}>{isSubmitting ? "Updating..." : "Update"}</Text>
+            <Text style={styles.submitButtonText}>
+              {isSubmitting ? "Updating..." : "Update"}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
     </Modal>
-  )
+  );
 
   return (
     <LinearGradient colors={["#0f172a", "#1e293b"]} style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <LinearGradient colors={["#3b82f6", "#1d4ed8"]} style={styles.headerIcon}>
+          <LinearGradient
+            colors={["#3b82f6", "#1d4ed8"]}
+            style={styles.headerIcon}
+          >
             <MaterialIcons name="trending-up" size={24} color="#ffffff" />
           </LinearGradient>
           <Text style={styles.headerTitle}>Investment</Text>
         </View>
-        <TouchableOpacity style={styles.addButton} onPress={() => setIsModalOpen(true)}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setIsModalOpen(true)}
+        >
           <MaterialIcons name="add" size={20} color="#ffffff" />
         </TouchableOpacity>
       </View>
@@ -526,7 +601,10 @@ const InvestmentMobile = () => {
             onChangeText={setSearchTerm}
           />
         </View>
-        <TouchableOpacity style={styles.filterButton} onPress={() => setShowFilterModal(true)}>
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={() => setShowFilterModal(true)}
+        >
           <MaterialIcons name="filter-list" size={20} color="#ffffff" />
         </TouchableOpacity>
       </View>
@@ -534,19 +612,33 @@ const InvestmentMobile = () => {
       {/* Action Bar */}
       <View style={styles.actionBar}>
         <View style={styles.actionLeft}>
-          <TouchableOpacity style={styles.selectAllButton} onPress={handleSelectAll}>
-            <MaterialIcons name={selectAll ? "check-box" : "check-box-outline-blank"} size={20} color="#3b82f6" />
+          <TouchableOpacity
+            style={styles.selectAllButton}
+            onPress={handleSelectAll}
+          >
+            <MaterialIcons
+              name={selectAll ? "check-box" : "check-box-outline-blank"}
+              size={20}
+              color="#3b82f6"
+            />
             <Text style={styles.selectAllText}>Select All</Text>
           </TouchableOpacity>
           {selectedRows.length > 0 && (
-            <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={handleDelete}
+            >
               <MaterialIcons name="delete" size={20} color="#ef4444" />
-              <Text style={styles.deleteButtonText}>Delete ({selectedRows.length})</Text>
+              <Text style={styles.deleteButtonText}>
+                Delete ({selectedRows.length})
+              </Text>
             </TouchableOpacity>
           )}
         </View>
         <View style={styles.actionRight}>
-          <Text style={styles.totalText}>Total: {filteredLoans?.length || 0}</Text>
+          <Text style={styles.totalText}>
+            Total: {filteredLoans?.length || 0}
+          </Text>
           <TouchableOpacity style={styles.exportButton} onPress={downloadPDF}>
             <MaterialIcons name="download" size={16} color="#3b82f6" />
           </TouchableOpacity>
@@ -556,20 +648,30 @@ const InvestmentMobile = () => {
       {/* Investment List */}
       <ScrollView
         style={styles.listContainer}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         showsVerticalScrollIndicator={false}
       >
         {loading
-          ? Array.from({ length: 3 }).map((_, index) => <LoadingCard key={index} />)
+          ? Array.from({ length: 3 }).map((_, index) => (
+              <LoadingCard key={index} />
+            ))
           : getCurrentPageItems().map((investment, index) => (
-              <InvestmentCard key={investment._id} investment={investment} index={index} />
+              <InvestmentCard
+                key={investment._id}
+                investment={investment}
+                index={index}
+              />
             ))}
 
         {!loading && filteredLoans?.length === 0 && (
           <View style={styles.emptyState}>
             <MaterialIcons name="inbox" size={64} color="#6b7280" />
             <Text style={styles.emptyStateText}>No investments found</Text>
-            <Text style={styles.emptyStateSubtext}>Add your first investment to get started</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Add your first investment to get started
+            </Text>
           </View>
         )}
       </ScrollView>
@@ -578,7 +680,10 @@ const InvestmentMobile = () => {
       {totalPages > 1 && (
         <View style={styles.paginationContainer}>
           <TouchableOpacity
-            style={[styles.paginationButton, currentPage === 1 && styles.paginationButtonDisabled]}
+            style={[
+              styles.paginationButton,
+              currentPage === 1 && styles.paginationButtonDisabled,
+            ]}
             onPress={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
           >
@@ -590,8 +695,13 @@ const InvestmentMobile = () => {
           </Text>
 
           <TouchableOpacity
-            style={[styles.paginationButton, currentPage === totalPages && styles.paginationButtonDisabled]}
-            onPress={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            style={[
+              styles.paginationButton,
+              currentPage === totalPages && styles.paginationButtonDisabled,
+            ]}
+            onPress={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
             disabled={currentPage === totalPages}
           >
             <MaterialIcons name="chevron-right" size={20} color="#ffffff" />
@@ -612,8 +722,8 @@ const InvestmentMobile = () => {
         </View>
       )}
     </LinearGradient>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -977,6 +1087,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
   },
-})
+});
 
-export default InvestmentMobile
+export default InvestmentMobile;

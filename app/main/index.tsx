@@ -107,29 +107,63 @@ const Dashboard =() => {
   }
 
   const { startOfWeek, endOfWeek } = getCurrentWeekRange()
-  const [weeklyData, setWeeklyData] = useState({ paidAmount: 0, dueAmount: 0 })
+  // const [weeklyData, setWeeklyData] = useState({ paidAmount: 0, dueAmount: 0 })
+const [weeklyData, setWeeklyData] = useState<{ paidAmount: number; dueAmount: number }>({
+  paidAmount: 0,
+  dueAmount: 0,
+});
+useEffect(() => {
+  if (!loanData || !Array.isArray(loanData)) return;
 
-  useEffect(() => {
-    if (!loanData || !Array.isArray(loanData)) return
-    const calculatedData = loanData.reduce(
-      (acc, loan) => {
-        if (!loan.emiHistory) return acc
-        loan.emiHistory.forEach((emi: any) => {
-          const emiDate = new Date(emi.date)
-          if (emiDate >= startOfWeek && emiDate <= endOfWeek) {
-            if (emi.paidStatus === "Paid") {
-              acc.paidAmount = acc.paidAmount + Number(emi.amount)
-            } else if (emi.paidStatus === "Due") {
-              acc.dueAmount = acc.dueAmount + Number(emi.amount)
-            }
+  const calculatedData = loanData.reduce(
+    (acc, loan) => {
+      if (!loan.emiHistory) return acc;
+
+      loan.emiHistory.forEach((emi: any) => {
+        const emiDate = new Date(emi.date);
+
+        if (emiDate >= startOfWeek && emiDate <= endOfWeek) {
+          if (emi.paidStatus === "Paid") {
+            acc.paidAmount += Number(emi.amount);
+          } else if (emi.paidStatus === "Due") {
+            acc.dueAmount += Number(emi.amount);
           }
-        })
-        return acc
-      },
-      { paidAmount: 0, dueAmount: 0 },
-    )
-    // setWeeklyData(calculatedData)
-  }, [loanData])
+        }
+      });
+
+      return acc;
+    },
+    { paidAmount: 0, dueAmount: 0 } // Initial accumulator — correct type
+  );
+
+  setWeeklyData(calculatedData); // ✅ Correct type passed here
+}, [loanData]);
+
+//   useEffect(() => {
+//     if (!loanData || !Array.isArray(loanData)) return
+// const calculatedData = loanData.reduce(
+//   (acc, loan) => {
+//         if (!loan.emiHistory) return acc;
+
+//         loan.emiHistory.forEach((emi:any) => {
+//           const emiDate = new Date(emi.date);
+
+//           if (emiDate >= startOfWeek && emiDate <= endOfWeek) {
+//             if (emi.paidStatus === "Paid") {
+//               acc.paidAmount = acc.paidAmount + Number(emi.amount);
+//             } else if (emi.paidStatus === "Due") {
+//               acc.dueAmount = acc.dueAmount + Number(emi.amount);
+//             }
+//           }
+//         });
+
+//         return acc;
+//       },
+//        { paidAmount: 0, dueAmount: 0 }
+//     );
+
+//     setWeeklyData(calculatedData);
+//   }, [loanData])
 
   const StatCard = ({ icon, title, amount, iconColor, iconName, iconFamily }: any) => (
     <View style={styles.statCardWrapper}>
