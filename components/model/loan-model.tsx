@@ -17,7 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Bounce, toast } from "react-toastify";
+import { toast } from "react-toastify";
 
 interface AddLoanModalProps {
   onClose: () => void;
@@ -200,115 +200,212 @@ const AddLoanModal: React.FC<AddLoanModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    const requiredFields = [
-      "name",
-      "customerId",
-      "loanId",
-      "phone",
-      "loanAmount",
-      "processingFee",
-      "interest",
-      "totalInstallment",
-      "installmentAmount",
-      "advancePayment",
-      "approvalDate",
-      "repaymentStartDate",
-      "paymentMethod",
-      "repaymentMethod",
-    ];
+  setIsSubmitting(true);
+  console.log("submit ....sbubmit..............................");
 
-    const missingFields = requiredFields.filter(
-      (field) => !formData[field as keyof typeof formData]
+  const requiredFields = [
+    "name",
+    "customerId",
+    "loanId",
+    "phone",
+    "loanAmount",
+    "processingFee",
+    "interest",
+    "totalInstallment",
+    "installmentAmount",
+    "advancePayment",
+    "approvalDate",
+    "repaymentStartDate",
+    "paymentMethod",
+    "repaymentMethod",
+  ];
+
+  const missingFields = requiredFields.filter(
+    (field) => !formData[field as keyof typeof formData]
+  );
+
+  if (missingFields.length < 0) {
+    toast.error(
+      `Please fill all required fields: ${missingFields.join(", ")}`,
+      { position: "top-center", autoClose: 1500 }
     );
+    setIsSubmitting(false);
+    return;
+  }
 
-    if (missingFields.length > 0) {
-      toast.error(
-        `Please fill all required fields: ${missingFields.join(", ")}`,
-        {
-          position: "top-center",
-          autoClose: 1500,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: false,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
-        }
-      );
-      setIsSubmitting(false);
-      return;
-    }
-    setFormData((prevData) => ({
-      ...prevData,
-      owner: ownerid,
-    }));
-    setIsSubmitting(true);
-    try {
-      if (totalInvestAmount < formData.loanAmount) {
-        toast.error("Investment amount is less than the loan amount...", {
-          position: "top-center",
-          autoClose: 2000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: false,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
-        });
-      } else {
-        const response = await addLoanDetails(formData);
-        if (response.success) {
-          setLoanData((prevLoans) =>
-            Array.isArray(prevLoans)
-              ? [...prevLoans, response.data]
-              : [response.data]
-          );
-          setFormData(intialData);
-          toast.success("loan added SuccessFully!!..", {
-            position: "top-center",
-            autoClose: 2000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: false,
-            draggable: true,
-            progress: undefined,
-            theme: "light",
-            transition: Bounce,
-          });
-          onClose();
-        } else {
-          toast.error("Failed to submit loan data", {
-            position: "top-center",
-            autoClose: 2000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: false,
-            draggable: true,
-            progress: undefined,
-            theme: "light",
-            transition: Bounce,
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Error submitting loan data:", error);
-      toast.error("An unexpected error occurred", {
+  const payload = {
+    ...formData,
+    paymentMethod: formData.paymentMethod || "cash",
+    owner: ownerid,
+  
+  };
+  console.log("  console.log(owner)",ownerid)
+  console.log("Payload being submitted:", payload);
+
+  try {
+    if (totalInvestAmount < formData.loanAmount) {
+      toast.error("Investment amount is less than the loan amount...", {
         position: "top-center",
         autoClose: 2000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: false,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-        transition: Bounce,
       });
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      const response = await addLoanDetails(payload); // ✅ fixed
+      if (response.success) {
+        setLoanData((prevLoans) =>
+          Array.isArray(prevLoans) ? [...prevLoans, response.data] : [response.data]
+        );
+        setFormData(intialData);
+        toast.success("Loan added successfully!", {
+          position: "top-center",
+          autoClose: 2000,
+        });
+        onClose();
+      } else {
+        toast.error("Failed to submit loan data", {
+          position: "top-center",
+          autoClose: 2000,
+        });
+      }
     }
-  };
+  } catch (error) {
+    console.error("Error submitting loan data:", error);
+    toast.error("An unexpected error occurred", {
+      position: "top-center",
+      autoClose: 2000,
+    });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+
+//   const handleSubmit = async () => {
+//     console.log("submit ....sbubmit..............................")
+//     const requiredFields = [
+//       "name",
+//       "customerId",
+//       "loanId",
+//       "phone",
+//       "loanAmount",
+//       "processingFee",
+//       "interest",
+//       "totalInstallment",
+//       "installmentAmount",
+//       "advancePayment",
+//       "approvalDate",
+//       "repaymentStartDate",
+//       "paymentMethod",
+//       "repaymentMethod",
+//     ];
+//  console.log("submit ....1")
+//     const missingFields = requiredFields.filter(
+//       (field) => !formData[field as keyof typeof formData]
+//     );
+//  console.log("submit ....2")
+//     if (missingFields.length < 0) {
+//        console.log("submit ....3")
+//       toast.error(
+//         `Please fill all required fields: ${missingFields.join(", ")}`,
+//         {
+//           position: "top-center",
+//           autoClose: 1500,
+//           hideProgressBar: false,
+//           closeOnClick: true,
+//           pauseOnHover: false,
+//           draggable: true,
+//           progress: undefined,
+//           theme: "light",
+//           transition: Bounce,
+//         }
+//       );
+//       setIsSubmitting(false);
+//        console.log("submit ....4")
+       
+//       return;
+//     }
+//       const payload = {
+//     ...formData,
+//     paymentMethod: formData.paymentMethod || "cash", // or any default
+//   };
+
+//   try {
+//     await addLoanDetails(payload);
+//   } catch (error) {
+//     console.error("Loan API Error:", error);
+//   }
+//      console.log("submit ....5")
+//     setFormData((prevData) => ({
+//       ...prevData,
+//       owner: ownerid,
+//     }));
+//      console.log("submit ....6")
+//     setIsSubmitting(true);
+//     try {
+//       if (totalInvestAmount < formData.loanAmount) {
+//         toast.error("Investment amount is less than the loan amount...", {
+//           position: "top-center",
+//           autoClose: 2000,
+//           hideProgressBar: false,
+//           closeOnClick: true,
+//           pauseOnHover: false,
+//           draggable: true,
+//           progress: undefined,
+//           theme: "light",
+//           transition: Bounce,
+//         });
+//       } else {
+//         const response = await addLoanDetails(formData);
+//         if (response.success) {
+//           setLoanData((prevLoans) =>
+//             Array.isArray(prevLoans)
+//               ? [...prevLoans, response.data]
+//               : [response.data]
+//           );
+//           setFormData(intialData);
+//           toast.success("loan added SuccessFully!!..", {
+//             position: "top-center",
+//             autoClose: 2000,
+//             hideProgressBar: false,
+//             closeOnClick: true,
+//             pauseOnHover: false,
+//             draggable: true,
+//             progress: undefined,
+//             theme: "light",
+//             transition: Bounce,
+//           });
+//           onClose();
+//         } else {
+//           toast.error("Failed to submit loan data", {
+//             position: "top-center",
+//             autoClose: 2000,
+//             hideProgressBar: false,
+//             closeOnClick: true,
+//             pauseOnHover: false,
+//             draggable: true,
+//             progress: undefined,
+//             theme: "light",
+//             transition: Bounce,
+//           });
+//         }
+//       }
+//     } catch (error) {
+//       console.error("Error submitting loan data:", error);
+//       toast.error("An unexpected error occurred", {
+//         position: "top-center",
+//         autoClose: 2000,
+//         hideProgressBar: false,
+//         closeOnClick: true,
+//         pauseOnHover: false,
+//         draggable: true,
+//         progress: undefined,
+//         theme: "light",
+//         transition: Bounce,
+//       });
+//     } finally {
+//       setIsSubmitting(false);
+//     }
+//   };
+  
   return (
     <Modal
       visible={visible}
