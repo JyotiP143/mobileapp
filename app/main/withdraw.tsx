@@ -327,13 +327,13 @@ const WithdrawalApp: React.FC = () => {
 
   const WithdrawalCard: React.FC<{ withdrawal: Withdrawal; index: number }> = ({ withdrawal, index }) => (
     <View style={styles.cardContainer}>
-      <LinearGradient colors={["rgba(239, 68, 68, 0.1)", "rgba(220, 38, 38, 0.1)"]} style={styles.card}>
+      <LinearGradient colors={["rgba(97, 68, 239, 0.1)", "rgba(38, 74, 220, 0.1)"]} style={styles.card}>
         <View style={styles.cardHeader}>
           <TouchableOpacity style={styles.checkbox} onPress={() => handleRowSelect(withdrawal._id)}>
             <MaterialIcons
               name={selectedRows.includes(withdrawal._id) ? "check-box" : "check-box-outline-blank"}
               size={24}
-              color={selectedRows.includes(withdrawal._id) ? "#ef4444" : "#9ca3af"}
+              color={selectedRows.includes(withdrawal._id) ? "#6a24c0ff" : "#9ca3af"}
             />
           </TouchableOpacity>
           <TouchableOpacity
@@ -349,7 +349,7 @@ const WithdrawalApp: React.FC = () => {
               })
             }}
           >
-            <MaterialIcons name="edit" size={20} color="#ef4444" />
+            <MaterialIcons name="edit" size={20} color="#6644efff" />
           </TouchableOpacity>
         </View>
 
@@ -580,12 +580,12 @@ const WithdrawalApp: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0f172a" />
+      <StatusBar barStyle="light-content" backgroundColor="#2a0f0fff" />
       <LinearGradient colors={["#0f172a", "#1e293b"]} style={styles.background}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <LinearGradient colors={["#ef4444", "#dc2626"]} style={styles.headerIcon}>
+            <LinearGradient colors={["#5244efff", "#262fdcff"]} style={styles.headerIcon}>
               <MaterialIcons name="trending-down" size={24} color="#ffffff" />
             </LinearGradient>
             <Text style={styles.headerTitle}>Withdrawals</Text>
@@ -615,7 +615,7 @@ const WithdrawalApp: React.FC = () => {
         <View style={styles.actionBar}>
           <View style={styles.actionLeft}>
             <TouchableOpacity style={styles.selectAllButton} onPress={handleSelectAll}>
-              <MaterialIcons name={selectAll ? "check-box" : "check-box-outline-blank"} size={20} color="#ef4444" />
+              <MaterialIcons name={selectAll ? "check-box" : "check-box-outline-blank"} size={20} color="#4f44efff" />
               <Text style={styles.selectAllText}>All</Text>
             </TouchableOpacity>
             {selectedRows.length > 0 && (
@@ -631,9 +631,7 @@ const WithdrawalApp: React.FC = () => {
               <MaterialIcons name="keyboard-arrow-down" size={16} color="#ffffff" />
             </TouchableOpacity>
             <Text style={styles.totalText}>{filteredWithdrawals.length}</Text>
-            <TouchableOpacity style={styles.exportButton} onPress={downloadPDF}>
-              <MaterialIcons name="download" size={16} color="#ef4444" />
-            </TouchableOpacity>
+          
           </View>
         </View>
 
@@ -703,9 +701,10 @@ const WithdrawalApp: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f172a",
+    backgroundColor: "#8dd23dff",
   },
   background: {
+    height: 100,
     flex: 1,
   },
   header: {
@@ -733,7 +732,7 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
   addButton: {
-    backgroundColor: "#ef4444",
+    backgroundColor: "#262fdcff",
     width: 40,
     height: 40,
     borderRadius: 8,
@@ -776,7 +775,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   selectAllText: {
-    color: "#ef4444",
+    color: "#445befff",
     fontSize: 14,
     fontWeight: "500",
   },
@@ -818,14 +817,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
   },
-  exportButton: {
-    backgroundColor: "rgba(239, 68, 68, 0.2)",
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+ 
   listContainer: {
     flex: 1,
     paddingHorizontal: 20,
@@ -981,7 +973,7 @@ const styles = StyleSheet.create({
   },
   modalForm: {
     padding: 20,
-    maxHeight: height * 0.10,
+    maxHeight: height * 10.10,
   },
   availableBalance: {
     backgroundColor: "#f3f4f6",
@@ -1027,7 +1019,7 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   submitButton: {
-    backgroundColor: "#ef4444",
+    backgroundColor: "#0f40dfff",
     margin: 20,
     paddingVertical: 16,
     borderRadius: 8,

@@ -9,8 +9,10 @@ const tabs = [
   { name: "Loans", route: "/main/loans", icon: "cash-outline", activeIcon: "cash" },
   { name: "Members", route: "/main/members", icon: "people-outline", activeIcon: "people" },
   { name: "Withdraw", route: "/main/withdraw", icon: "wallet-outline", activeIcon: "wallet" },
-   { name: "Profile", route: "/main/profile", icon: "wallet-outline", activeIcon: "wallet" },
+  { name: "Profile", route: "/main/profile", icon: "person-circle-outline", activeIcon: "person-circle" },
+  { name: "Logout", route: "/main/logout", icon: "log-out-outline", activeIcon: "log-out" },
 ];
+
 
  const CustomTabBar = () => {
   const router = useRouter();

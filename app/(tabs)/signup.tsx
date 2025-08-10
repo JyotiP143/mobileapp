@@ -1,5 +1,6 @@
 "use client"
 
+import { addOwners } from "@/axios/auth"
 import { useUser } from "@/context/UserContext"
 import { Ionicons } from "@expo/vector-icons"
 import { useNavigation } from "@react-navigation/native"
@@ -11,13 +12,12 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native"
 import Toast from "react-native-toast-message"
 import { Bounce, toast } from "react-toastify"
@@ -81,16 +81,11 @@ const SignUpScreen = () => {
       setIsLoading(true)
 
       // Replace with your actual API call
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-         toast.success(data.message, {
+      const response = await addOwners(formData);
+  
+console.log(formData,"rea---",response)
+      if (response?.success) {
+         toast.success(response.message, {
           position: "top-center",
           autoClose: 2000,
           hideProgressBar: false,
@@ -102,10 +97,9 @@ const SignUpScreen = () => {
           transition: Bounce,
         });
         setStep(2);
-         fetchUserData();
-        router.push("/main");
+       
       } else {
-        toast.error(data.message, {
+        toast.error(response?.message, {
           position: "top-center",
           autoClose: 2000,
           hideProgressBar: false,
@@ -359,7 +353,7 @@ const SignUpScreen = () => {
   )
 
   return (
-    <SafeAreaView style={styles.container}>
+  
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardAvoid}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           {/* Background Gradient */}
@@ -408,10 +402,8 @@ const SignUpScreen = () => {
             </View>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
-
       <Toast />
-    </SafeAreaView>
+      </KeyboardAvoidingView>
   )
 }
 

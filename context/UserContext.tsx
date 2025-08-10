@@ -1,5 +1,6 @@
 "use client";
 import { getToken } from "@/utils/authToken";
+import { useRouter } from "expo-router";
 import React, {
   createContext,
   ReactNode,
@@ -9,6 +10,7 @@ import React, {
 } from "react";
 import { loadLoanData } from "./../axios/loanApi";
 import { updateImage, userDetails } from "./../axios/profile";
+
 
 // Interfaces
 interface UserData {
@@ -68,7 +70,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
 
 const [userData, setUserData] = useState<UserData>(initialData);
-
+const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [loanisLoading, setLoanIsLoading] = useState(true);
   const [loanData, setLoanData] = useState<Loan[]>([]);
@@ -194,8 +196,9 @@ console.log("hiiihiihih----",data)
       });
 
       if (response.ok) {
+        console.log("user logout" ,response)
         setUserData(initialData);
-        // router.push("/login");
+        router.push("/(tabs)");
       }
     } catch (error) {
       console.error("Error during logout:", error);

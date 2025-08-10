@@ -60,7 +60,7 @@ const ProfilePage = () => {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    padding: 24, // p-6
+    padding: 4, // p-6
     backgroundColor: "#1a1a1a", // Assuming a dark background for the page
   },
   profileSkeleton: {

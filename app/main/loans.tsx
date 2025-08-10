@@ -1,5 +1,5 @@
 import { updateProfile } from "@/axios/profile";
-import AddLoanModal from '@/components/model/loan-model';
+import AddLoanModal from "@/components/model/loan-model";
 import { useUser } from "@/context/UserContext";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -12,7 +12,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 const { width } = Dimensions.get("window");
 
@@ -32,7 +32,7 @@ const CardView = () => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showModal, setShowModal] = useState<boolean>(false);
   const { userInfo, setUserInfo, loanData, isLoading } = useUser();
-  const ownerid = ""
+  const ownerid = "";
   const loansPerPage = 6;
 
   useEffect(() => {
@@ -315,8 +315,43 @@ const CardView = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.searchContainer}>
-            <View style={styles.searchInputContainer}>
+            {/* <View style={styles.searchInputContainer}>
+              <MaterialIcons name="search" size={20} color="#9ca3af" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search by name"
+                placeholderTextColor="#9ca3af"
+                value={searchTerm}
+                onChangeText={handleSearch}
+                editable={!isLoading}
+              />
+            </View> */}
+            <View style={styles.mainheader}> 
+            <View style={styles.headerLeft}>
+              <LinearGradient
+                colors={["#3b82f6", "#1d4ed8"]}
+                style={styles.headerIcon}
+              >
+                <MaterialIcons name="trending-up" size={24} color="#ffffff" />
+              </LinearGradient>
+              <Text style={styles.headerTitle}>Loan</Text>
+            </View>
+            <View>
+              <AddLoanModal
+                visible={showModal}
+                onClose={() => setShowModal(false)}
+                ownerid={ownerid}
+              />
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => setShowModal(true)}
+              >
+                <MaterialIcons name="add" size={20} color="#ffffff" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={styles.headerActions}>
+             <View style={styles.searchInputContainer}>
               <MaterialIcons name="search" size={20} color="#9ca3af" />
               <TextInput
                 style={styles.searchInput}
@@ -327,17 +362,6 @@ const CardView = () => {
                 editable={!isLoading}
               />
             </View>
-            <View>
-             <AddLoanModal visible={showModal} onClose={() => setShowModal(false)} ownerid={ownerid} />
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => setShowModal(true)}
-              >
-                <MaterialIcons name="add" size={20} color="#ffffff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-          <View style={styles.headerActions}>
             <TouchableOpacity
               style={styles.filterButton}
               onPress={() => setShowFilterModal(true)}
@@ -345,18 +369,18 @@ const CardView = () => {
             >
               <MaterialIcons name="filter-list" size={20} color="#ffffff" />
             </TouchableOpacity>
-
-            <View style={styles.totalContainer}>
-              <Text style={styles.totalText}>
-                Total: {isLoading ? "..." : totalLoans}
-              </Text>
-            </View>
           </View>
         </View>
 
         {/* Pagination */}
         <View style={styles.paginationContainer}>
-          <TouchableOpacity
+            <View style={styles.totalContainer}>
+              <Text style={styles.totalText}>
+                Total: {isLoading ? "..." : totalLoans}
+              </Text>
+            </View>
+        <View style={styles.paginationContainer}>
+            <TouchableOpacity
             style={[
               styles.paginationArrow,
               (isLoading || currentPage === 1) &&
@@ -395,6 +419,7 @@ const CardView = () => {
             <MaterialIcons name="chevron-right" size={20} color="#ffffff" />
           </TouchableOpacity>
         </View>
+        </View>
         {/* Loan Cards */}
         <FlatList
           data={
@@ -421,6 +446,13 @@ const CardView = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  mainheader :{
+   flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   background: {
     flex: 1,
@@ -480,6 +512,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
   },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  headerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#ffffff",
+  },
   totalText: {
     color: "#ffffff",
     fontSize: 14,
@@ -487,10 +536,10 @@ const styles = StyleSheet.create({
   },
   paginationContainer: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 20,
-    backgroundColor: "rgba(55, 65, 81, 0.8)",
+    // backgroundColor: "rgba(55, 65, 81, 0.8)",
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 16,

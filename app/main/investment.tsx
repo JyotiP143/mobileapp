@@ -1,7 +1,6 @@
 "use client";
 
 import { deleteInvestment, invest_Withdraw } from "@/axios/investWithdraw";
-import AddInvestmentModal from '@/components/addForms/investment-form';
 import { useInvestment } from "@/context/InvestmentContext";
 import type { EditFormData, FormData, Investment } from "@/types/investment";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -13,7 +12,10 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -23,7 +25,7 @@ import {
   View
 } from "react-native";
 
-// const { width, height } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 const InvestmentMobile = () => {
   const initialData = { amount: "", remark: "", date: "" };
@@ -90,14 +92,14 @@ const InvestmentMobile = () => {
     return `${day}-${month}-${year}`;
   };
 
-  // const handleChange = (name: keyof FormData, value: string): void => {
-  //   setFormData({ ...formData, [name]: value })
-  // }
   const handleChange = (name: keyof FormData, value: string): void => {
-    if (formData[name] !== value) {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-  };
+    setFormData({ ...formData, [name]: value })
+  }
+  // const handleChange = (name: keyof FormData, value: string): void => {
+  //   if (formData[name] !== value) {
+  //     setFormData((prev) => ({ ...prev, [name]: value }));
+  //   }
+  // };
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -429,8 +431,9 @@ const InvestmentMobile = () => {
   //         </View>
   //         <KeyboardAvoidingView
   //           behavior={Platform.OS === "ios" ? "padding" : "height"}>
-  //           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-  //             <ScrollView contentContainerStyle={styles.modalForm} keyboardShouldPersistTaps="handled">
+  //           {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+  //         <View > */}
+  //               <ScrollView contentContainerStyle={styles.modalForm} >
   //               <View style={styles.formGroup}>
   //                 <Text style={styles.formLabel}>
   //                   Amount<Text style={styles.required}>*</Text>
@@ -480,7 +483,8 @@ const InvestmentMobile = () => {
   //                 </Text>
   //               </TouchableOpacity>
   //             </ScrollView>
-  //           </TouchableWithoutFeedback>
+  //         {/* </View>
+  //           </TouchableWithoutFeedback> */}
   //         </KeyboardAvoidingView>
   //       </View>
   //     </View>
@@ -488,88 +492,88 @@ const InvestmentMobile = () => {
   // );
 
 
-  // const AddInvestmentModal: React.FC = () => (
-  //   <Modal
-  //     visible={isModalOpen}
-  //     transparent
-  //     animationType="slide"
-  //     onRequestClose={() => setIsModalOpen(false)}
-  //   >
-  //     {/* <View style={styles.modalContainer}> */}
-  //       <KeyboardAvoidingView
-  //         style={{ flex: 1 }}
-  //         behavior={Platform.OS === "ios" ? "padding" : undefined}
-  //         keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-  //       >
-  //         {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
-  //           <View style={styles.innerContainer}>
-  //             <View style={styles.modalHeader}>
-  //               <Text style={styles.modalTitle}>Add Investment</Text>
-  //               <TouchableOpacity onPress={() => setIsModalOpen(false)}>
-  //                 <MaterialIcons name="close" size={24} color="#6b7280" />
-  //               </TouchableOpacity>
-  //             </View>
+  const AddInvestmentModal: React.FC = () => (
+    <Modal
+      visible={isModalOpen}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setIsModalOpen(false)}
+    >
+      {/* <View style={styles.modalContainer}> */}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+        >
+          {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
+            <View style={styles.innerContainer}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Add Investment</Text>
+                <TouchableOpacity onPress={() => setIsModalOpen(false)}>
+                  <MaterialIcons name="close" size={24} color="#6b7280" />
+                </TouchableOpacity>
+              </View>
 
-  //             <ScrollView
-  //               contentContainerStyle={styles.modalForm}
-  //               keyboardShouldPersistTaps="handled"
-  //             >
-  //               <View style={styles.formGroup}>
-  //                 <Text style={styles.formLabel}>
-  //                   Amount<Text style={styles.required}>*</Text>
-  //                 </Text>
-  //                 <TextInput
-  //                   style={styles.formInput}
-  //                   placeholder="Enter the amount"
-  //                   value={formData.amount}
-  //                   onChangeText={(value) => handleChange("amount", value)}
-  //                   keyboardType="numeric"
-  //                 />
-  //               </View>
+              <ScrollView
+                contentContainerStyle={styles.modalForm}
+                keyboardShouldPersistTaps="handled"
+              >
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>
+                    Amount<Text style={styles.required}>*</Text>
+                  </Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Enter the amount"
+                    value={formData.amount}
+                    onChangeText={(value) => handleChange("amount", value)}
+                    keyboardType="numeric"
+                  />
+                </View>
 
-  //               <View style={styles.formGroup}>
-  //                 <Text style={styles.formLabel}>Remarks</Text>
-  //                 <TextInput
-  //                   style={[styles.formInput, styles.textArea]}
-  //                   placeholder="Optional remarks"
-  //                   value={formData.remark}
-  //                   onChangeText={(value) => handleChange("remark", value)}
-  //                   multiline
-  //                   numberOfLines={3}
-  //                 />
-  //               </View>
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Remarks</Text>
+                  <TextInput
+                    style={[styles.formInput, styles.textArea]}
+                    placeholder="Optional remarks"
+                    value={formData.remark}
+                    onChangeText={(value) => handleChange("remark", value)}
+                    multiline
+                    numberOfLines={3}
+                  />
+                </View>
 
-  //               <View style={styles.formGroup}>
-  //                 <Text style={styles.formLabel}>
-  //                   Date <Text style={styles.required}>*</Text>
-  //                 </Text>
-  //                 <TextInput
-  //                   style={styles.formInput}
-  //                   placeholder="dd/mm/yyyy"
-  //                   value={formData.date}
-  //                   onChangeText={(value) => handleChange("date", value)}
-  //                 />
-  //               </View>
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>
+                    Date <Text style={styles.required}>*</Text>
+                  </Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="dd/mm/yyyy"
+                    value={formData.date}
+                    onChangeText={(value) => handleChange("date", value)}
+                  />
+                </View>
 
-  //               <TouchableOpacity
-  //                 style={[
-  //                   styles.submitButton,
-  //                   isSubmitting && styles.submitButtonDisabled,
-  //                 ]}
-  //                 onPress={handleSubmit}
-  //                 disabled={isSubmitting}
-  //               >
-  //                 <Text style={styles.submitButtonText}>
-  //                   {isSubmitting ? "Submitting..." : "Submit"}
-  //                 </Text>
-  //               </TouchableOpacity>
-  //             </ScrollView>
-  //           </View>
-  //         {/* </TouchableWithoutFeedback> */}
-  //       </KeyboardAvoidingView>
-  //     {/* </View> */}
-  //   </Modal>
-  // );
+                <TouchableOpacity
+                  style={[
+                    styles.submitButton,
+                    isSubmitting && styles.submitButtonDisabled,
+                  ]}
+                  onPress={handleSubmit}
+                  disabled={isSubmitting}
+                >
+                  <Text style={styles.submitButtonText}>
+                    {isSubmitting ? "Submitting..." : "Submit"}
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
+          {/* </TouchableWithoutFeedback> */}
+        </KeyboardAvoidingView>
+      {/* </View> */}
+    </Modal>
+  );
 
   const EditInvestmentModal: React.FC = () => (
     <Modal
@@ -1044,8 +1048,9 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: "#ffffff",
     borderRadius: 16,
-    // width: width * 0.9,
-    // maxHeight: height * 0.8,
+    
+    width: width * 0.9,
+    maxHeight: height * 0.8,
   },
   modalHeader: {
     flexDirection: "row",
@@ -1106,7 +1111,7 @@ const styles = StyleSheet.create({
   filterModalContent: {
     borderRadius: 16,
     padding: 24,
-    // width: width * 0.8,
+    width: width * 0.8,
     maxWidth: 300,
   },
   filterTitle: {
