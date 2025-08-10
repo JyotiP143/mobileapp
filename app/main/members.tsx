@@ -196,37 +196,6 @@ return Object.entries(result).map(([customerId, data]: [string, any]) => {
       setRefreshing(false)
     }, 2000)
   }
-
-  // const StatsCard: React.FC = () => (
-  //   <View style={styles.statsContainer}>
-  //     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statsScrollContent}>
-  //       <LinearGradient colors={["#3b82f6", "#1d4ed8"]} style={styles.statCard}>
-  //         <MaterialIcons name="people" size={24} color="#ffffff" />
-  //         <Text style={styles.statNumber}>{memberStats.totalMembers}</Text>
-  //         <Text style={styles.statLabel}>Total Members</Text>
-  //       </LinearGradient>
-
-  //       <LinearGradient colors={["#10b981", "#059669"]} style={styles.statCard}>
-  //         <MaterialIcons name="person-add" size={24} color="#ffffff" />
-  //         <Text style={styles.statNumber}>{memberStats.activeMembers}</Text>
-  //         <Text style={styles.statLabel}>Active</Text>
-  //       </LinearGradient>
-
-  //       <LinearGradient colors={["#f59e0b", "#d97706"]} style={styles.statCard}>
-  //         <MaterialIcons name="person-remove" size={24} color="#ffffff" />
-  //         <Text style={styles.statNumber}>{memberStats.inactiveMembers}</Text>
-  //         <Text style={styles.statLabel}>Inactive</Text>
-  //       </LinearGradient>
-
-  //       <LinearGradient colors={["#8b5cf6", "#7c3aed"]} style={styles.statCard}>
-  //         <MaterialIcons name="account-balance" size={24} color="#ffffff" />
-  //         <Text style={styles.statNumber}>₹{(memberStats.totalLoanAmount / 100000).toFixed(1)}L</Text>
-  //         <Text style={styles.statLabel}>Total Loans</Text>
-  //       </LinearGradient>
-  //     </ScrollView>
-  //   </View>
-  // )
-
   const MemberCard: React.FC<{ member: Member; index: number }> = ({ member, index }) => (
     <View style={styles.cardContainer}>
       <LinearGradient
@@ -305,13 +274,6 @@ return Object.entries(result).map(([customerId, data]: [string, any]) => {
             </Text>
           </View>
         </View>
-
-        {/* {member.isNew && (
-          <View style={styles.newBadge}>
-            <MaterialIcons name="fiber-new" size={16} color="#3b82f6" />
-            <Text style={styles.newBadgeText}>New</Text>
-          </View>
-        )} */}
       </LinearGradient>
     </View>
   )
@@ -408,10 +370,6 @@ return Object.entries(result).map(([customerId, data]: [string, any]) => {
             <MaterialIcons name={viewMode === "card" ? "view-list" : "view-module"} size={20} color="#ffffff" />
           </TouchableOpacity>
         </View>
-
-        {/* Stats Cards */}
-        {/* <StatsCard /> */}
-
         {/* Search and Filters */}
         <View style={styles.searchContainer}>
           <View style={styles.searchInputContainer}>

@@ -315,24 +315,13 @@ const CardView = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-            {/* <View style={styles.searchInputContainer}>
-              <MaterialIcons name="search" size={20} color="#9ca3af" />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search by name"
-                placeholderTextColor="#9ca3af"
-                value={searchTerm}
-                onChangeText={handleSearch}
-                editable={!isLoading}
-              />
-            </View> */}
             <View style={styles.mainheader}> 
             <View style={styles.headerLeft}>
               <LinearGradient
                 colors={["#3b82f6", "#1d4ed8"]}
                 style={styles.headerIcon}
               >
-                <MaterialIcons name="trending-up" size={24} color="#ffffff" />
+                <MaterialIcons name="attach-money" size={24} color="#ffffff" />
               </LinearGradient>
               <Text style={styles.headerTitle}>Loan</Text>
             </View>
@@ -379,7 +368,7 @@ const CardView = () => {
                 Total: {isLoading ? "..." : totalLoans}
               </Text>
             </View>
-        <View style={styles.paginationContainer}>
+        <View style={styles.paginationContainerone}>
             <TouchableOpacity
             style={[
               styles.paginationArrow,
@@ -451,7 +440,7 @@ const styles = StyleSheet.create({
    flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
+    // paddingHorizontal: 20,
     paddingVertical: 16,
   },
   background: {
@@ -480,6 +469,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap:10,
   },
   searchInputContainer: {
     flex: 1,
@@ -539,6 +529,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 20,
+    // backgroundColor: "rgba(55, 65, 81, 0.8)",
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+   paginationContainerone: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    // marginBottom: 20,
     // backgroundColor: "rgba(55, 65, 81, 0.8)",
     borderRadius: 12,
     paddingVertical: 8,

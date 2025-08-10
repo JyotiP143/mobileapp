@@ -1,37 +1,29 @@
 // Sidebar.tsx
 import { usePathname, useRouter } from "expo-router";
 import {
-    ChevronLeft,
-    ChevronRight,
-    CircleDollarSign,
-    Dock,
-    IndianRupee,
-    LayoutDashboard,
-    LogOut,
-    Menu,
-    ShieldCheck,
-    User,
-    Users,
-    X
+  LogOut,
+  Menu,
+  ShieldCheck,
+  X
 } from "lucide-react-native";
 import React, { useState } from "react";
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useUser } from "@/context/UserContext";
 
-type SidebarNavItem = {
-  title: string;
-  icon: React.ComponentType<any>;
-  href: string;
-};
+// type SidebarNavItem = {
+//   title: string;
+//   icon: React.ComponentType<any>;
+//   href: string;
+// };
 
-const sidebarNavItems: SidebarNavItem[] = [
-  { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { title: "Loans", icon: Dock, href: "/dashboard/loans" },
-  { title: "Investment", icon: IndianRupee, href: "/dashboard/investment" },
-  { title: "Withdrawn", icon: CircleDollarSign, href: "/dashboard/withdrawn" },
-  { title: "Members", icon: Users, href: "/dashboard/members" },
-];
+// const sidebarNavItems: SidebarNavItem[] = [
+//   { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+//   { title: "Loans", icon: Dock, href: "/dashboard/loans" },
+//   { title: "Investment", icon: IndianRupee, href: "/dashboard/investment" },
+//   { title: "Withdrawn", icon: CircleDollarSign, href: "/dashboard/withdrawn" },
+//   { title: "Members", icon: Users, href: "/dashboard/members" },
+// ];
 
 interface SidebarProps {
   className?: string; // Not used in RN, but kept for API parity
@@ -79,7 +71,7 @@ interface SidebarProps {
         </TouchableOpacity>
       </View>
 
-      {/* Navigation Items */}
+      {/* Navigation Items
       <ScrollView style={styles.navContainer}>
         {sidebarNavItems.map((item) => {
           const IconComponent = item.icon;
@@ -107,11 +99,11 @@ interface SidebarProps {
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+      </ScrollView> */}
 
       {/* Profile and Logout */}
       <View style={styles.footer}>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={[
             styles.navItem,
             pathname === "/dashboard/profile" && styles.navItemActive,
@@ -125,7 +117,7 @@ interface SidebarProps {
             style={isExpanded ? styles.navIconExpanded : styles.navIconCollapsed}
           />
           {isExpanded && <Text style={styles.navText}>Profile</Text>}
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity
           style={[
@@ -143,9 +135,9 @@ interface SidebarProps {
         </TouchableOpacity>
 
         {/* Expand / Collapse */}
-        <TouchableOpacity style={styles.toggleButton} onPress={toggleSidebar}>
+        {/* <TouchableOpacity style={styles.toggleButton} onPress={toggleSidebar}>
           {isExpanded ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </View>
   );

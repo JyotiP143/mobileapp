@@ -701,7 +701,7 @@ const WithdrawalApp: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#8dd23dff",
+    // backgroundColor: "#8dd23dff",
   },
   background: {
     height: 100,
@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.2)",
+    borderColor: "rgba(55, 49, 219, 0.2)",
     position: "relative",
   },
   cardHeader: {
