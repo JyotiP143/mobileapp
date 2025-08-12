@@ -1,3 +1,4 @@
+
 import { Stack } from "expo-router";
 import React from "react";
 const TabLayout = ()=>  {
@@ -9,6 +10,7 @@ const TabLayout = ()=>  {
       <Stack.Screen name="members" />
       <Stack.Screen name="withdraw" />
       <Stack.Screen name="profile" />
+    
     </Stack>
   );
 }

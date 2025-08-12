@@ -92,16 +92,16 @@ const InvestmentMobile = () => {
     return `${day}-${month}-${year}`;
   };
 
-  const handleChange = (name: keyof FormData, value: string): void => {
-    setFormData({ ...formData, [name]: value })
-  }
   // const handleChange = (name: keyof FormData, value: string): void => {
-  //   if (formData[name] !== value) {
-  //     setFormData((prev) => ({ ...prev, [name]: value }));
-  //   }
-  // };
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
+  //   setFormData({ ...formData, [name]: value })
+  // }
+  const handleChange = (name: keyof FormData, value: string): void => {
+    if (formData[name] !== value) {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+  const handleSubmit = async () => {
+   
     setIsSubmitting(true);
     if (!formData.amount || !formData.date) {
       setIsSubmitting(false);
@@ -127,7 +127,10 @@ const InvestmentMobile = () => {
           };
         });
       }
-    } catch (error) { }
+    } catch (error) {
+      console.log("nejdeofiwoia")
+
+     }
   };
 
   const downloadPDF = (): void => {
@@ -243,6 +246,7 @@ const InvestmentMobile = () => {
                 email: investmentData.email,
               })) as any;
               if (response.success) {
+                console.log("response ", response)
                 setInvestmentData((prevData: any) => ({
                   ...prevData,
                   investments: prevData.investments.filter(
@@ -497,15 +501,13 @@ const InvestmentMobile = () => {
       visible={isModalOpen}
       transparent
       animationType="slide"
-      onRequestClose={() => setIsModalOpen(false)}
-    >
-      {/* <View style={styles.modalContainer}> */}
+      onRequestClose={() => setIsModalOpen(false)} >
+         {isModalOpen && (
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
         >
-          {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
             <View style={styles.innerContainer}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Add Investment</Text>
@@ -569,9 +571,8 @@ const InvestmentMobile = () => {
                 </TouchableOpacity>
               </ScrollView>
             </View>
-          {/* </TouchableWithoutFeedback> */}
         </KeyboardAvoidingView>
-      {/* </View> */}
+         )}
     </Modal>
   );
 
@@ -590,11 +591,6 @@ const InvestmentMobile = () => {
               <MaterialIcons name="close" size={24} color="#6b7280" />
             </TouchableOpacity>
           </View>
-          {/* <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={{ flex: 1 }}
-          >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
           <ScrollView style={styles.modalForm}>
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>
@@ -633,8 +629,6 @@ const InvestmentMobile = () => {
               />
             </View>
           </ScrollView>
-          {/* </TouchableWithoutFeedback>
-          </KeyboardAvoidingView> */}
           <TouchableOpacity
             style={[
               styles.submitButton,
