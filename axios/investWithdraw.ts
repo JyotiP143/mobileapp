@@ -15,8 +15,10 @@ export const deleteInvestment = async (data :any ) => {
   
     const response = await api.delete("/userControll/deleteInvestWithdrawn");
     return response.data;
-  } catch (error) {
-    console.log("error--", error);
+  } catch (error:any) {
+       console.error("API deleteInvestment error:", error.response?.data || error);
+    return { success: false, message: error.response?.data?.message || "Request failed" };
+
   }
 };
 

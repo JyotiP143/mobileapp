@@ -232,7 +232,7 @@ const InvestmentMobile = () => {
   const handleDelete = async (): Promise<void> => {
     Alert.alert(
       "Confirm Delete",
-      `Are you sure you want to delete ${selectedRows.length} investment(s)?`,
+      `Are you sure you want tso delete ${selectedRows.length} investment(s)?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -261,6 +261,7 @@ const InvestmentMobile = () => {
                 Alert.alert("Error", response.message);
               }
             } catch (error) {
+              console.error("Delete investment error:", error);
               Alert.alert("Error", "Failed to delete investments");
             } finally {
               setIsDeleting(false);

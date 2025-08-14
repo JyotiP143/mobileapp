@@ -81,9 +81,9 @@ const SignUpScreen = () => {
       setIsLoading(true)
 
       // Replace with your actual API call
-      const response = await addOwners(formData);
+      const response :any = await addOwners(formData);
   
-console.log(formData,"rea---",response)
+console.log(formData,"reahj---",response)
       if (response?.success) {
          toast.success(response.message, {
           position: "top-center",
