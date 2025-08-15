@@ -92,14 +92,9 @@ const InvestmentMobile = () => {
     return `${day}-${month}-${year}`;
   };
 
-  // const handleChange = (name: keyof FormData, value: string): void => {
-  //   setFormData({ ...formData, [name]: value })
-  // }
   const handleChange = (name: keyof FormData, value: string): void => {
-    if (formData[name] !== value) {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-  };
+    setFormData({ ...formData, [name]: value })
+  }
   const handleSubmit = async () => {
    
     setIsSubmitting(true);

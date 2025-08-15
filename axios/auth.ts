@@ -19,21 +19,6 @@ interface AuthResponse {
   };
   message?: string;
 }
-
-// Add new owner (sign up)
-// export const addOwners = async (
-//   userData: UserCredentials
-// ): Promise<AuthResponse | undefined> => {
-//   try {
-//     const response = await api.post<AuthResponse>("/auth/signup", userData);
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error during signup:", error);
-//   }
-// };
-
-// addOwners.ts
-
 export const addOwners = async (userData: any) => {
   try {
     const response = await api.post("/auth/signup", userData);
@@ -48,10 +33,6 @@ export const addOwners = async (userData: any) => {
     };
   }
 };
-
-
-
-
 // Verify owner (login)
 export const verifyOwner = async (
   userData: UserCredentials

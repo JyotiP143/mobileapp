@@ -243,13 +243,19 @@ const WithdrawalApp: React.FC = () => {
       if (response.success) {
         setInvestmentData((prevData: InvestmentData) => {
           const updatedWithdrawals = prevData.withdrawals.some((wd: Withdrawal) => wd._id === editFormData.wid)
+          
   ? prevData.withdrawals.map((wd: Withdrawal) =>
-      wd._id === editFormData.wid
-        ? { ...wd, ...editFormData, _id: editFormData.wid } // 🛠 Include _id explicitly
-        : wd,
-    )
+    wd._id === editFormData.wid
+  ? { ...wd, ...editFormData, _id: editFormData.wid } // 🛠 Include _id explicitly
+  : wd,
+  
+)
   : [...prevData.withdrawals, { ...editFormData, _id: editFormData.wid } as Withdrawal];
-
+console.log("editFormData.wid....",editFormData.wid)
+ return {
+    ...prevData,
+    withdrawals: updatedWithdrawals,
+  };
         })
         setIsEditModalOpen(false)
         setIsSubmitting(false)
@@ -296,6 +302,7 @@ const WithdrawalApp: React.FC = () => {
               email: investmentData.email,
             }) as any
             if (response.success) {
+               console.log("response ++++", response)
               setInvestmentData((prevData: InvestmentData) => ({
                 ...prevData,
                 withdrawals: prevData.withdrawals.filter(

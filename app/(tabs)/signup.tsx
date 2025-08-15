@@ -131,7 +131,7 @@ console.log(formData,"reahj---",response)
   const handleVerifyOtp = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/auth/verifyOtp", {
+      const response = await fetch("https://finance.evoxcel.com/api/auth/verifyOtp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: formData.email, otp }),
@@ -389,7 +389,7 @@ console.log(formData,"reahj---",response)
             </View>
 
             {/* Form Content */}
-            {step === 1 ? renderSignupForm() : renderOtpForm()}
+            {step === 1 ? renderOtpForm(): renderSignupForm() }
 
             {/* Footer */}
             <View style={styles.footer}>
