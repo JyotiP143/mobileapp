@@ -22,7 +22,7 @@ const moreTabs : { name: string; route: string; icon: IoniconName }[] = [
   const router = useRouter();
   const pathname = usePathname();
   const [moreVisible, setMoreVisible] = useState(false);
-console.log("Current Path pathname :", pathname);
+// console.log("Current Path pathname :", pathname);
  if (pathname === "/" || pathname ==="/signup") {
     return null;
   }

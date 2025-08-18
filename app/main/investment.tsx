@@ -269,7 +269,6 @@ const InvestmentMobile = () => {
 
   const onRefresh = (): void => {
     setRefreshing(true);
-    // Add your refresh logic here
     setTimeout(() => {
       setRefreshing(false);
     }, 2000);
@@ -413,85 +412,6 @@ const InvestmentMobile = () => {
       </View>
     </Modal>
   );
-
-  // const AddInvestmentModal: React.FC = () => (
-  //   <Modal
-  //     visible={isModalOpen}
-  //     transparent
-  //     animationType="slide"
-  //     onRequestClose={() => setIsModalOpen(false)}
-  //   >
-  //     <View style={styles.modalOverlay}>
-  //       <View style={styles.modalContent}>
-  //         <View style={styles.modalHeader}>
-  //           <Text style={styles.modalTitle}>Add Investment</Text>
-  //           <TouchableOpacity onPress={() => setIsModalOpen(false)}>
-  //             <MaterialIcons name="close" size={24} color="#6b7280" />
-  //           </TouchableOpacity>
-  //         </View>
-  //         <KeyboardAvoidingView
-  //           behavior={Platform.OS === "ios" ? "padding" : "height"}>
-  //           {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-  //         <View > */}
-  //               <ScrollView contentContainerStyle={styles.modalForm} >
-  //               <View style={styles.formGroup}>
-  //                 <Text style={styles.formLabel}>
-  //                   Amount<Text style={styles.required}>*</Text>
-  //                 </Text>
-  //                 <TextInput
-  //                   style={styles.formInput}
-  //                   placeholder="Enter the amount"
-  //                   value={formData.amount}
-  //                   onChangeText={(value) => handleChange("amount", value)}
-  //                   keyboardType="numeric"
-  //                 />
-  //               </View>
-
-  //               <View style={styles.formGroup}>
-  //                 <Text style={styles.formLabel}>Remarks</Text>
-  //                 <TextInput
-  //                   style={[styles.formInput, styles.textArea]}
-  //                   placeholder="Optional remarks"
-  //                   value={formData.remark}
-  //                   onChangeText={(value) => handleChange("remark", value)}
-  //                   multiline
-  //                   numberOfLines={3}
-  //                 />
-  //               </View>
-
-  //               <View style={styles.formGroup}>
-  //                 <Text style={styles.formLabel}>
-  //                   Date <Text style={styles.required}>*</Text>
-  //                 </Text>
-  //                 <TextInput
-  //                   style={styles.formInput}
-  //                   placeholder="dd/mm/yyyy"
-  //                   value={formData.date}
-  //                   onChangeText={(value) => handleChange("date", value)}
-  //                 />
-  //               </View>
-  //               <TouchableOpacity
-  //                 style={[
-  //                   styles.submitButton,
-  //                   isSubmitting && styles.submitButtonDisabled,
-  //                 ]}
-  //                 onPress={handleSubmit}
-  //                 disabled={isSubmitting}
-  //               >
-  //                 <Text style={styles.submitButtonText}>
-  //                   {isSubmitting ? "Submitting..." : "Submit"}
-  //                 </Text>
-  //               </TouchableOpacity>
-  //             </ScrollView>
-  //         {/* </View>
-  //           </TouchableWithoutFeedback> */}
-  //         </KeyboardAvoidingView>
-  //       </View>
-  //     </View>
-  //   </Modal>
-  // );
-
-
   const AddInvestmentModal: React.FC = () => (
     <Modal
       visible={isModalOpen}
