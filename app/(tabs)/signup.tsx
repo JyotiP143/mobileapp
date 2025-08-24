@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { addOwners } from "@/axios/auth"
-import { useUser } from "@/context/UserContext"
-import { Ionicons } from "@expo/vector-icons"
-import { useNavigation } from "@react-navigation/native"
-import { LinearGradient } from "expo-linear-gradient"
-import { useRouter } from "expo-router"
-import type React from "react"
-import { useState } from "react"
+import { addOwners } from "@/axios/auth";
+import { useUser } from "@/context/UserContext";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import type React from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -17,17 +17,17 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
-} from "react-native"
-import Toast from "react-native-toast-message"
-import { Bounce, toast } from "react-toastify"
+  View,
+} from "react-native";
+import Toast from "react-native-toast-message";
+import { Bounce, toast } from "react-toastify";
 // Types
 interface FormData {
-  name: "",
-  email: "",
-  phone: "",
-  companyName: "",
-  password: "",
+  name: "";
+  email: "";
+  phone: "";
+  companyName: "";
+  password: "";
 }
 
 const SignUpScreen = () => {
@@ -40,21 +40,22 @@ const SignUpScreen = () => {
   });
   const router = useRouter();
   const { fetchUserData } = useUser();
-  const [confirmPassword, setConfirmPassword] = useState<string>("")
-  const [otp, setOtp] = useState<string>("")
-  const [step, setStep] = useState<number>(1)
-  const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [showPassword, setShowPassword] = useState<boolean>(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false)
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [otp, setOtp] = useState<string>("");
+  const [step, setStep] = useState<number>(1);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState<boolean>(false);
 
-  const navigation = useNavigation()
+  const navigation = useNavigation();
 
   const handleInputChange = (name: keyof FormData, value: string) => {
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
-    }))
-  }
+    }));
+  };
 
   const handleSignup = async () => {
     if (formData.password !== confirmPassword) {
@@ -63,52 +64,47 @@ const SignUpScreen = () => {
         text1: "Password Mismatch",
         text2: "The passwords entered do not match!",
         position: "top",
-      })
-      return
+      });
+      return;
     }
 
-    if (!formData.name || !formData.email || !formData.phone || !formData.companyName || !formData.password) {
+    if (
+      !formData.name ||
+      !formData.email ||
+      !formData.phone ||
+      !formData.companyName ||
+      !formData.password
+    ) {
       Toast.show({
         type: "error",
         text1: "Missing Fields",
         text2: "Please fill in all required fields",
         position: "top",
-      })
-      return
+      });
+      return;
     }
 
     try {
-      setIsLoading(true)
+      setIsLoading(true);
 
       // Replace with your actual API call
-      const response :any = await addOwners(formData);
-  
-console.log(formData,"reahj---",response)
+      const response: any = await addOwners(formData);
+
+      console.log(formData, "reahj---", response);
       if (response?.success) {
-         toast.success(response.message, {
-          position: "top-center",
-          autoClose: 2000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: false,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
+        Toast.show({
+          type: "success",
+          text1: "Signup Successful",
+          text2: response.message,
+          position: "top",
         });
         setStep(2);
-       
       } else {
-        toast.error(response?.message, {
-          position: "top-center",
-          autoClose: 2000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: false,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
+        Toast.show({
+          type: "error",
+          text1: "Signup Failed",
+          text2: response?.message || "Something went wrong",
+          position: "top",
         });
       }
     } catch (error) {
@@ -124,68 +120,55 @@ console.log(formData,"reahj---",response)
         transition: Bounce,
       });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleVerifyOtp = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("https://finance.evoxcel.com/api/auth/verifyOtp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: formData.email, otp }),
-      });
+      const response = await fetch(
+        "https://finance.evoxcel.com/api/auth/verifyOtp",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email, otp }),
+        }
+      );
       const data = await response.json();
       if (response.ok) {
-        toast.success(data.message, {
-          position: "top-center",
-          autoClose: 2000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: false,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
-        });
+       Toast.show({
+        type: "success",
+        text1: "OTP Verified",
+        text2: data.message,
+        position: "top",
+      });
         fetchUserData();
         router.push("/main");
       } else {
-        toast.error(data.message, {
-          position: "top-center",
-          autoClose: 2000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: false,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
-        });
-      }
-    }
-    catch (error) {
-      console.error("OTP Verification Error:", error);
-      toast.error("An error occurred during OTP verification", {
-        position: "top-center",
-        autoClose: 2000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: false,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-        transition: Bounce,
+         Toast.show({
+        type: "error",
+        text1: "OTP Failed",
+        text2: data.message,
+        position: "top",
       });
+      }
+    } catch (error) {
+      console.error("OTP Verification Error:", error);
+      Toast.show({
+      type: "error",
+      text1: "Error",
+      text2: "An error occurred during OTP verification",
+      position: "top",
+    });
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   const navigateToLogin = () => {
-    navigation.navigate("Login" as never)
-  }
+    navigation.navigate("Login" as never);
+  };
 
   const renderSignupForm = () => (
     <View style={styles.form}>
@@ -194,7 +177,12 @@ console.log(formData,"reahj---",response)
         <View style={[styles.inputGroup, styles.halfWidth]}>
           <Text style={styles.label}>Full Name</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="person" size={20} color="#9CA3AF" style={styles.inputIcon} />
+            <Ionicons
+              name="person"
+              size={20}
+              color="#9CA3AF"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={styles.input}
               placeholder="Enter Your Name"
@@ -210,7 +198,12 @@ console.log(formData,"reahj---",response)
         <View style={[styles.inputGroup, styles.halfWidth]}>
           <Text style={styles.label}>Email</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="mail" size={20} color="#9CA3AF" style={styles.inputIcon} />
+            <Ionicons
+              name="mail"
+              size={20}
+              color="#9CA3AF"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={styles.input}
               placeholder="john@example.com"
@@ -230,7 +223,12 @@ console.log(formData,"reahj---",response)
         <View style={[styles.inputGroup, styles.halfWidth]}>
           <Text style={styles.label}>Phone Number</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="call" size={20} color="#9CA3AF" style={styles.inputIcon} />
+            <Ionicons
+              name="call"
+              size={20}
+              color="#9CA3AF"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={styles.input}
               placeholder="+91 98765 43210"
@@ -245,7 +243,12 @@ console.log(formData,"reahj---",response)
         <View style={[styles.inputGroup, styles.halfWidth]}>
           <Text style={styles.label}>Company Name</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="business" size={20} color="#9CA3AF" style={styles.inputIcon} />
+            <Ionicons
+              name="business"
+              size={20}
+              color="#9CA3AF"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={styles.input}
               placeholder="Enter Company Name"
@@ -263,7 +266,12 @@ console.log(formData,"reahj---",response)
         <View style={[styles.inputGroup, styles.halfWidth]}>
           <Text style={styles.label}>Password</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed" size={20} color="#9CA3AF" style={styles.inputIcon} />
+            <Ionicons
+              name="lock-closed"
+              size={20}
+              color="#9CA3AF"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={[styles.input, styles.passwordInput]}
               placeholder="Create a password"
@@ -274,8 +282,15 @@ console.log(formData,"reahj---",response)
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-              <Ionicons name={showPassword ? "eye" : "eye-off"} size={20} color="#9CA3AF" />
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.eyeIcon}
+            >
+              <Ionicons
+                name={showPassword ? "eye" : "eye-off"}
+                size={20}
+                color="#9CA3AF"
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -283,7 +298,12 @@ console.log(formData,"reahj---",response)
         <View style={[styles.inputGroup, styles.halfWidth]}>
           <Text style={styles.label}>Confirm Password</Text>
           <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed" size={20} color="#9CA3AF" style={styles.inputIcon} />
+            <Ionicons
+              name="lock-closed"
+              size={20}
+              color="#9CA3AF"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={[styles.input, styles.passwordInput]}
               placeholder="Confirm your password"
@@ -294,8 +314,15 @@ console.log(formData,"reahj---",response)
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon}>
-              <Ionicons name={showConfirmPassword ? "eye" : "eye-off"} size={20} color="#9CA3AF" />
+            <TouchableOpacity
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              style={styles.eyeIcon}
+            >
+              <Ionicons
+                name={showConfirmPassword ? "eye" : "eye-off"}
+                size={20}
+                color="#9CA3AF"
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -307,7 +334,10 @@ console.log(formData,"reahj---",response)
         onPress={handleSignup}
         disabled={isLoading}
       >
-        <LinearGradient colors={["#3B82F6", "#8B5CF6"]} style={styles.submitButtonGradient}>
+        <LinearGradient
+          colors={["#3B82F6", "#8B5CF6"]}
+          style={styles.submitButtonGradient}
+        >
           {isLoading ? (
             <ActivityIndicator color="white" size="small" />
           ) : (
@@ -316,14 +346,19 @@ console.log(formData,"reahj---",response)
         </LinearGradient>
       </TouchableOpacity>
     </View>
-  )
+  );
 
   const renderOtpForm = () => (
     <View style={styles.form}>
       <View style={styles.inputGroup}>
         <Text style={styles.label}>OTP</Text>
         <View style={styles.inputContainer}>
-          <Ionicons name="shield-checkmark" size={20} color="#9CA3AF" style={styles.inputIcon} />
+          <Ionicons
+            name="shield-checkmark"
+            size={20}
+            color="#9CA3AF"
+            style={styles.inputIcon}
+          />
           <TextInput
             style={styles.input}
             placeholder="Enter OTP"
@@ -341,7 +376,10 @@ console.log(formData,"reahj---",response)
         onPress={handleVerifyOtp}
         disabled={isLoading}
       >
-        <LinearGradient colors={["#3B82F6", "#8B5CF6"]} style={styles.submitButtonGradient}>
+        <LinearGradient
+          colors={["#3B82F6", "#8B5CF6"]}
+          style={styles.submitButtonGradient}
+        >
           {isLoading ? (
             <ActivityIndicator color="white" size="small" />
           ) : (
@@ -350,62 +388,81 @@ console.log(formData,"reahj---",response)
         </LinearGradient>
       </TouchableOpacity>
     </View>
-  )
+  );
 
   return (
-  
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardAvoid}>
-        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-          {/* Background Gradient */}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.keyboardAvoid}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Background Gradient */}
+        <LinearGradient
+          colors={[
+            "rgba(59, 130, 246, 0.1)",
+            "rgba(147, 51, 234, 0.1)",
+            "rgba(236, 72, 153, 0.1)",
+          ]}
+          style={styles.backgroundGradient}
+        />
+
+        {/* Animated Gradient Orbs */}
+        <View style={styles.orbContainer}>
           <LinearGradient
-            colors={["rgba(59, 130, 246, 0.1)", "rgba(147, 51, 234, 0.1)", "rgba(236, 72, 153, 0.1)"]}
-            style={styles.backgroundGradient}
+            colors={["rgba(59, 130, 246, 0.3)", "rgba(59, 130, 246, 0.1)"]}
+            style={[styles.orb, styles.orb1]}
           />
+          <LinearGradient
+            colors={["rgba(147, 51, 234, 0.3)", "rgba(147, 51, 234, 0.1)"]}
+            style={[styles.orb, styles.orb2]}
+          />
+        </View>
 
-          {/* Animated Gradient Orbs */}
-          <View style={styles.orbContainer}>
+        {/* Main Card */}
+        <View style={styles.card}>
+          {/* Header */}
+          <View style={styles.header}>
             <LinearGradient
-              colors={["rgba(59, 130, 246, 0.3)", "rgba(59, 130, 246, 0.1)"]}
-              style={[styles.orb, styles.orb1]}
-            />
-            <LinearGradient
-              colors={["rgba(147, 51, 234, 0.3)", "rgba(147, 51, 234, 0.1)"]}
-              style={[styles.orb, styles.orb2]}
-            />
+              colors={["#3B82F6", "#8B5CF6"]}
+              style={styles.iconContainer}
+            >
+              <Ionicons name="wallet" size={32} color="white" />
+            </LinearGradient>
+
+            <Text style={styles.title}>
+              {step === 1 ? "Create an account" : "Verify OTP"}
+            </Text>
+            <Text style={styles.subtitle}>
+              {step === 1
+                ? "Enter your details to get started"
+                : "Enter the OTP sent to your email"}
+            </Text>
           </View>
 
-          {/* Main Card */}
-          <View style={styles.card}>
-            {/* Header */}
-            <View style={styles.header}>
-              <LinearGradient colors={["#3B82F6", "#8B5CF6"]} style={styles.iconContainer}>
-                <Ionicons name="wallet" size={32} color="white" />
-              </LinearGradient>
+          {/* Form Content */}
+          {step === 1 ? renderSignupForm() : renderOtpForm()}
 
-              <Text style={styles.title}>{step === 1 ? "Create an account" : "Verify OTP"}</Text>
-              <Text style={styles.subtitle}>
-                {step === 1 ? "Enter your details to get started" : "Enter the OTP sent to your email"}
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              Already have an account?{" "}
+              <Text
+                style={styles.loginLink}
+                onPress={() => router.push("/(tabs)")}
+              >
+                Login
               </Text>
-            </View>
-
-            {/* Form Content */}
-            {step === 1 ? renderOtpForm(): renderSignupForm() }
-
-            {/* Footer */}
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>
-                Already have an account?{" "}
-                <Text style={styles.loginLink} onPress={() => router.push("/(tabs)")}>
-                  Login
-                </Text>
-              </Text>
-            </View>
+            </Text>
           </View>
-        </ScrollView>
+        </View>
+      </ScrollView>
       <Toast />
-      </KeyboardAvoidingView>
-  )
-}
+    </KeyboardAvoidingView>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -559,6 +616,6 @@ const styles = StyleSheet.create({
     color: "#60A5FA",
     fontWeight: "500",
   },
-})
+});
 
-export default SignUpScreen ;
+export default SignUpScreen;

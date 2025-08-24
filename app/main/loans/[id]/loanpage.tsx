@@ -108,7 +108,15 @@ const LoanDetailsScreen: React.FC<Props> = () => {
   }
 
   const loanId = loanData.find((item: any) => item._id === decodedId)
-  const userLoanData = loanData.filter((item: any) => item.customerId === loanId.customerId)
+  if (!loanId) {
+  console.error("Loan not found for decodedId:", decodedId);
+  return;
+}
+
+const userLoanData = loanData.filter(
+  (item: any) => item.customerId === loanId.customerId
+);
+
   const loanMethod =
     initialLoanData.repaymentMethod === "weekly"
       ? "Week"

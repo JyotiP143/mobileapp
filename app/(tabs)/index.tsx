@@ -1,5 +1,4 @@
-"use client"
-import { verifyOwner } from "@/axios/auth";
+"use client";
 import OTPVerificationModal from "@/components/model/otpVerificationMode";
 import { useUser } from "@/context/UserContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,38 +24,38 @@ import { Bounce, toast } from "react-toastify";
 
 // Types
 interface LoginData {
-  email: string
-  password: string
+  email: string;
+  password: string;
 }
 
-type LoginScreenProps = {}
+type LoginScreenProps = {};
 
 const LoginScreen: React.FC<LoginScreenProps> = () => {
-  const initialData= {
+  const initialData = {
     email: "",
     password: "",
-  }
-const { fetchUserData } = useUser();
-  const navigation = useNavigation()
-  const [loginData, setLoginData] = useState<LoginData>(initialData)
-  const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [showVerify, setShowVerify] = useState<boolean>(false)
-  const [showOTPModal, setShowOTPModal] = useState<boolean>(false)
-  const [showPassword, setShowPassword] = useState<boolean>(false)
+  };
+  const { fetchUserData } = useUser();
+  const navigation = useNavigation();
+  const [loginData, setLoginData] = useState<LoginData>(initialData);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showVerify, setShowVerify] = useState<boolean>(false);
+  const [showOTPModal, setShowOTPModal] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const router = useRouter();
   // Mock functions - replace with your actual implementations
-  // const verifyOwner = async (data: LoginData) => {
-  //   // Replace with your actual API call
-  //   return new Promise((resolve) => {
-  //     setTimeout(() => {
-  //       resolve({
-  //         success: true,
-  //         status: 200,
-  //         message: "Login successful",
-  //       })
-  //     }, 2000)
-  //   })
-  // }
+  const verifyOwner = async (data: LoginData) => {
+    // Replace with your actual API call
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          status: 200,
+          message: "Login successful",
+        })
+      }, 2000)
+    })
+  }
 
   // const fetchUserData = async () => {
   //   // Replace with your actual user data fetching logic
@@ -67,8 +66,8 @@ const { fetchUserData } = useUser();
     setLoginData((prevData) => ({
       ...prevData,
       [field]: value,
-    }))
-  }
+    }));
+  };
 
   const handleSubmit = async () => {
     if (!loginData.email || !loginData.password) {
@@ -77,29 +76,23 @@ const { fetchUserData } = useUser();
         text1: "Validation Error",
         text2: "Please fill in all fields",
         position: "top",
-      })
-      return
+      });
+      return;
     }
-
     try {
-      setIsLoading(true)
-      const response: any = await verifyOwner(loginData)
-
+      setIsLoading(true);
+      const response: any = await verifyOwner(loginData);
       if (response?.success) {
         Toast.show({
           type: "success",
           text1: "Success",
           text2: "Logged in successfully!",
           position: "top",
-        })
-
-        // Navigate to dashboard - replace with your actual screen name
+        });
         router.push("/main");
         fetchUserData();
-
       } else if (response?.status === 403) {
-     
-          toast.warn(response?.message || "Please verify your email!", {
+        toast.warn(response?.message || "Please verify your email!", {
           position: "top-center",
           autoClose: 2000,
           hideProgressBar: false,
@@ -111,14 +104,14 @@ const { fetchUserData } = useUser();
           transition: Bounce,
         });
 
-        setShowVerify(true)
+        setShowVerify(true);
       } else {
         Toast.show({
           type: "error",
           text1: "Login Failed",
           text2: response?.message || "Invalid login credentials!",
           position: "top",
-        })
+        });
       }
     } catch (error: any) {
       Toast.show({
@@ -126,54 +119,119 @@ const { fetchUserData } = useUser();
         text1: "Error",
         text2: error?.response?.data?.message || "Something went wrong!",
         position: "top",
-      })
-      console.error("Error during login:", error)
+      });
+      console.error("Error during login:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
+
+  // const handleSendOTP = async () => {
+  //   try {
+  //     // Replace with your actual OTP sending logic
+  //     const response = await fetch("/api/auth/sendOTP", {
+  //       method: "PUT",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ email: loginData.email }),
+  //     })
+
+  //     const data = await response.json()
+
+  //     if (data.success) {
+  //       setShowOTPModal(true)
+  //       Toast.show({
+  //         type: "success",
+  //         text1: "OTP Sent",
+  //         text2: "OTP sent successfully!",
+  //         position: "top",
+  //       })
+  //     }
+  //   } catch (error) {
+  //     Toast.show({
+  //       type: "error",
+  //       text1: "Error",
+  //       text2: "Failed to send OTP",
+  //       position: "top",
+  //     })
+  //   }
+  // }
 
   const handleSendOTP = async () => {
+    console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhg");
+    if (!loginData.email) {
+      Toast.show({
+        type: "error",
+        text1: "Validation Error",
+        text2: "Please enter your email first",
+        position: "top",
+      });
+      return;
+    }
     try {
-      // Replace with your actual OTP sending logic
-      const response = await fetch("/api/auth/sendOTP", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: loginData.email }),
-      })
+      setIsLoading(true);
+       console.log("joidjfpo................kiiiiiiii");
+      const response = await fetch(
+        "https://finance.evoxcel.com/api/auth/sendOtp",
+        {
+          method: "POST", // change to PUT if your backend really needs it
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: loginData.email }),
+        }
+      );
+      const data = await response.json();
 
-      const data = await response.json()
-
-      if (data.success) {
-        setShowOTPModal(true)
+      if (response.ok && data.success) {
+         console.log("joidjfpo................kkkkkk");
+        setShowOTPModal(true);
         Toast.show({
           type: "success",
           text1: "OTP Sent",
-          text2: "OTP sent successfully!",
+          text2: data.message || "Please check your email",
           position: "top",
-        })
+        });
+      } else {
+        console.log("joidjfpo................");
+        Toast.show({
+          type: "error",
+          text1: "Failed to Send OTP",
+          text2: data.message || "Something went wrong",
+          position: "top",
+        });
       }
     } catch (error) {
+      console.error("Send OTP Error:", error);
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: "Failed to send OTP",
+        text2: "Could not connect to server",
         position: "top",
-      })
+      });
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
   const navigateToSignUp = () => {
-    navigation.navigate("SignUp" as never)
-  }
+    navigation.navigate("SignUp" as never);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardAvoid}>
-        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoid}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Background Gradient */}
           <LinearGradient
-            colors={["rgba(59, 130, 246, 0.1)", "rgba(147, 51, 234, 0.1)", "rgba(236, 72, 153, 0.1)"]}
+            colors={[
+              "rgba(59, 130, 246, 0.1)",
+              "rgba(147, 51, 234, 0.1)",
+              "rgba(236, 72, 153, 0.1)",
+            ]}
             style={styles.backgroundGradient}
           />
 
@@ -193,12 +251,17 @@ const { fetchUserData } = useUser();
           <View style={styles.card}>
             {/* Header */}
             <View style={styles.header}>
-              <LinearGradient colors={["#3B82F6", "#8B5CF6"]} style={styles.iconContainer}>
+              <LinearGradient
+                colors={["#3B82F6", "#8B5CF6"]}
+                style={styles.iconContainer}
+              >
                 <Ionicons name="wallet" size={32} color="white" />
               </LinearGradient>
 
               <Text style={styles.title}>Welcome back</Text>
-              <Text style={styles.subtitle}>Enter your credentials to access your account</Text>
+              <Text style={styles.subtitle}>
+                Enter your credentials to access your account
+              </Text>
             </View>
 
             {/* Form */}
@@ -206,13 +269,20 @@ const { fetchUserData } = useUser();
               {/* Email Input */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Email</Text>
-                {showVerify && (
-                  <TouchableOpacity onPress={handleSendOTP} style={styles.verifyButton}>
-                    <Text style={styles.verifyText}>Verify Email</Text>
-                  </TouchableOpacity>
-                )}
+                <TouchableOpacity
+                  onPress={handleSendOTP}
+                  style={styles.verifyButton}
+                >
+                  <Text style={styles.verifyText}>Verify Email</Text>
+                </TouchableOpacity>
+
                 <View style={styles.inputContainer}>
-                  <Ionicons name="mail" size={20} color="#9CA3AF" style={styles.inputIcon} />
+                  <Ionicons
+                    name="mail"
+                    size={20}
+                    color="#9CA3AF"
+                    style={styles.inputIcon}
+                  />
                   <TextInput
                     style={styles.input}
                     placeholder="Enter your email"
@@ -230,7 +300,12 @@ const { fetchUserData } = useUser();
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Password</Text>
                 <View style={styles.inputContainer}>
-                  <Ionicons name="lock-closed" size={20} color="#9CA3AF" style={styles.inputIcon} />
+                  <Ionicons
+                    name="lock-closed"
+                    size={20}
+                    color="#9CA3AF"
+                    style={styles.inputIcon}
+                  />
                   <TextInput
                     style={[styles.input, styles.passwordInput]}
                     placeholder="Enter your password"
@@ -241,19 +316,32 @@ const { fetchUserData } = useUser();
                     autoCapitalize="none"
                     autoCorrect={false}
                   />
-                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-                    <Ionicons name={showPassword ? "eye" : "eye-off"} size={20} color="#9CA3AF" />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeIcon}
+                  >
+                    <Ionicons
+                      name={showPassword ? "eye" : "eye-off"}
+                      size={20}
+                      color="#9CA3AF"
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
 
               {/* Login Button */}
               <TouchableOpacity
-                style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+                style={[
+                  styles.loginButton,
+                  isLoading && styles.loginButtonDisabled,
+                ]}
                 onPress={handleSubmit}
                 disabled={isLoading}
               >
-                <LinearGradient colors={["#3B82F6", "#8B5CF6"]} style={styles.loginButtonGradient}>
+                <LinearGradient
+                  colors={["#3B82F6", "#8B5CF6"]}
+                  style={styles.loginButtonGradient}
+                >
                   {isLoading ? (
                     <ActivityIndicator color="white" size="small" />
                   ) : (
@@ -267,7 +355,10 @@ const { fetchUserData } = useUser();
             <View style={styles.footer}>
               <Text style={styles.footerText}>
                 Dont have an account?{" "}
-                <Text style={styles.signUpLink} onPress={() => router.push("/(tabs)/signup")}>
+                <Text
+                  style={styles.signUpLink}
+                  onPress={() => router.push("/(tabs)/signup")}
+                >
                   Sign up
                 </Text>
               </Text>
@@ -281,18 +372,23 @@ const { fetchUserData } = useUser();
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>OTP Verification</Text>
-            <Text style={styles.modalText}>Please check your email for the OTP code</Text>
-            <TouchableOpacity style={styles.modalButton} onPress={() => setShowOTPModal(false)}>
+            <Text style={styles.modalText}>
+              Please check your email for the OTP code
+            </Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => setShowOTPModal(false)}
+            >
               <Text style={styles.modalButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
- {showOTPModal && (<OTPVerificationModal email={loginData.email} />)}
+      {showOTPModal && <OTPVerificationModal email={loginData.email} />}
       <Toast />
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -486,6 +582,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "600",
   },
-})
+});
 
-export default LoginScreen
+export default LoginScreen;
