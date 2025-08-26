@@ -78,11 +78,12 @@ const router = useRouter();
   const [userInfo, setUserInfo] = useState<UserInfo>({});
   const [ownerisLoading, setOwnerIsLoading] = useState(true);
   const [imageLoading, setImageLoading] = useState(false);
-
+ 
 
 const fetchUserData = async () => {
   try {
     const token = await getToken();
+    console.log("token---",token)
 
     if (!token) {
       setUserData(initialData);
@@ -105,7 +106,7 @@ const fetchUserData = async () => {
     }
 
     const data = await response.json();
-console.log("hiiihiihih----",data)
+console.log("hiiihiihih----",response)
     if (data?.success && data?.user) {
       setUserData({
         id: data.user.id ?? null,

@@ -1,6 +1,5 @@
 "use client";
 
-import { addOwners } from "@/axios/auth";
 import { useUser } from "@/context/UserContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -87,15 +86,18 @@ const SignUpScreen = () => {
     try {
       setIsLoading(true);
 
-      // Replace with your actual API call
-      const response: any = await addOwners(formData);
 
-      console.log(formData, "reahj---", response);
-      if (response?.success) {
+      const response = await fetch("https://finance.evoxcel.com/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+        const data = await response.json();
+      if (response?.ok) {
         Toast.show({
           type: "success",
           text1: "Signup Successful",
-          text2: response.message,
+          text2: data.message,
           position: "top",
         });
         setStep(2);
@@ -103,7 +105,7 @@ const SignUpScreen = () => {
         Toast.show({
           type: "error",
           text1: "Signup Failed",
-          text2: response?.message || "Something went wrong",
+          text2: data?.message || "Something went wrong",
           position: "top",
         });
       }
@@ -476,6 +478,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     padding: 16,
+    backgroundColor: "#000000",
   },
   backgroundGradient: {
     position: "absolute",

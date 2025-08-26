@@ -4,30 +4,62 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { InvestmentProvider } from "@/context/InvestmentContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { StatusBar, StyleSheet } from "react-native";
+import {
+  SafeAreaProvider,
+  SafeAreaView
+} from "react-native-safe-area-context";
 import CustomTabBar from "../components/CustomTabBar";
 import { UserProvider } from "./../context/UserContext";
 
+function LayoutWithInsets() {
+  const colorScheme = useColorScheme();
+console.log(colorScheme)
+  return (
+    <SafeAreaView
+      style={[
+        styles.container,
+        {
+          backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+        },
+      ]}
+    >
+    <StatusBar
+      barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
+      backgroundColor={colorScheme === "dark" ? "#000" : "#fff"}
+    />
+
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="main" options={{ headerShown: false }} />
+      </Stack>
+      <CustomTabBar />
+    </SafeAreaView>
+  );
+}
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <UserProvider>
-      <InvestmentProvider>
-      <Stack >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="main" options={{ headerShown: false }} />
-      </Stack>
-      <StatusBar style="auto" />
-      <CustomTabBar />
-      </InvestmentProvider>
+        <InvestmentProvider>
+          <SafeAreaProvider>
+            <LayoutWithInsets />
+          </SafeAreaProvider>
+        </InvestmentProvider>
       </UserProvider>
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});

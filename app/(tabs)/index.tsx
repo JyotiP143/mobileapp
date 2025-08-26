@@ -82,6 +82,7 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
     try {
       setIsLoading(true);
       const response: any = await verifyOwner(loginData);
+      console.log("user--info---",response)
       if (response?.success) {
         Toast.show({
           type: "success",
@@ -157,7 +158,7 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
   // }
 
   const handleSendOTP = async () => {
-    console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhg");
+ 
     if (!loginData.email) {
       Toast.show({
         type: "error",
