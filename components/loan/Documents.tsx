@@ -1,23 +1,23 @@
 "use client"
 
+import { Ionicons } from "@expo/vector-icons"
+import * as FileSystem from "expo-file-system"
+import * as ImagePicker from "expo-image-picker"
+import * as Sharing from "expo-sharing"
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  Modal,
+  ActivityIndicator,
   Alert,
   Dimensions,
-  ActivityIndicator,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native"
-import * as ImagePicker from "expo-image-picker"
-import * as FileSystem from "expo-file-system"
-import * as Sharing from "expo-sharing"
-import { Ionicons } from "@expo/vector-icons"
 import { useImageContext } from "../../context/ImageContext"
 
 const { width } = Dimensions.get("window")
