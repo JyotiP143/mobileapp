@@ -83,24 +83,35 @@ const router = useRouter();
 const fetchUserData = async () => {
   try {
     const token = await getToken();
-    console.log("token---",token)
+   console.log("token---", typeof token, token);
+
 
     if (!token) {
       setUserData(initialData);
       return;
     }
+const response = await fetch("https://finance.evoxcel.com/api/auth/session", {
+  method: "GET",
+  credentials: "include", // 👈 important for cookies
+  headers: {
+    Authorization: `Bearer ${token}`, 
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  },
+});
 
-    const response = await fetch("https://finance.evoxcel.com/api/auth/session", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`, // ⬅ sending token manually
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-    });
+    // const response = await fetch("https://finance.evoxcel.com/api/auth/session", {
+    //   method: "GET",
+    //   credentials: "include",
+    //   headers: {
+    //     Authorization: `Bearer ${token}`, // ⬅ sending token manually
+    //     Accept: "application/json",
+    //     "Content-Type": "application/json",
+    //   },
+    // });
 
     if (!response.ok) {
-      console.warn("Failed to fetch user data. Status:", response.status);
+      console.log("Failed to fetch user data. Status:", response.status);
       setUserData(initialData);
       return;
     }
