@@ -1,48 +1,19 @@
 // Sidebar.tsx
-import { usePathname, useRouter } from "expo-router";
+
 import {
-  LogOut,
-  Menu,
-  ShieldCheck,
-  X
+  LogOut
 } from "lucide-react-native";
 import React, { useState } from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useUser } from "@/context/UserContext";
-
-// type SidebarNavItem = {
-//   title: string;
-//   icon: React.ComponentType<any>;
-//   href: string;
-// };
-
-// const sidebarNavItems: SidebarNavItem[] = [
-//   { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-//   { title: "Loans", icon: Dock, href: "/dashboard/loans" },
-//   { title: "Investment", icon: IndianRupee, href: "/dashboard/investment" },
-//   { title: "Withdrawn", icon: CircleDollarSign, href: "/dashboard/withdrawn" },
-//   { title: "Members", icon: Users, href: "/dashboard/members" },
-// ];
-
 interface SidebarProps {
-  className?: string; // Not used in RN, but kept for API parity
+  className?: string; 
 }
 
  const Sidebar: React.FC<SidebarProps> = () => {
   const { logoutUser } = useUser();
-  const pathname = usePathname();
-  const router = useRouter();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
-
-  const toggleSidebar = () => setIsExpanded(!isExpanded);
-
-  const handleNavigation = (href: string) => {
-    router.push(href as any);
-    setIsMenuOpen(false);
-  };
-
   return (
     <View
       style={[
@@ -50,75 +21,8 @@ interface SidebarProps {
         { width: isExpanded ? 240 : 64 }
       ]}
     >
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => handleNavigation("/dashboard")}
-          style={styles.logoContainer}
-        >
-          <ShieldCheck color="#6366f1" size={24} />
-          {isExpanded && <Text style={styles.logoText}>EvoXcel</Text>}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.menuButton}
-          onPress={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          {isMenuOpen ? (
-            <X size={20} color="#fff" />
-          ) : (
-            <Menu size={20} color="#fff" />
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Navigation Items
-      <ScrollView style={styles.navContainer}>
-        {sidebarNavItems.map((item) => {
-          const IconComponent = item.icon;
-          const isActive = pathname === item.href;
-          return (
-            <TouchableOpacity
-              key={item.href}
-              style={[
-                styles.navItem,
-                isActive && styles.navItemActive,
-                !isExpanded && styles.navItemCollapsed
-              ]}
-              onPress={() => handleNavigation(item.href)}
-            >
-              <IconComponent
-                size={18}
-                color={isActive ? "#fff" : "#fff"}
-                style={isExpanded ? styles.navIconExpanded : styles.navIconCollapsed}
-              />
-              {isExpanded && (
-                <Text style={[styles.navText, isActive && styles.navTextActive]}>
-                  {item.title}
-                </Text>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView> */}
-
       {/* Profile and Logout */}
       <View style={styles.footer}>
-        {/* <TouchableOpacity
-          style={[
-            styles.navItem,
-            pathname === "/dashboard/profile" && styles.navItemActive,
-            !isExpanded && styles.navItemCollapsed
-          ]}
-          onPress={() => handleNavigation("/dashboard/profile")}
-        >
-          <User
-            size={18}
-            color="#fff"
-            style={isExpanded ? styles.navIconExpanded : styles.navIconCollapsed}
-          />
-          {isExpanded && <Text style={styles.navText}>Profile</Text>}
-        </TouchableOpacity> */}
-
         <TouchableOpacity
           style={[
             styles.navItem,
@@ -133,11 +37,6 @@ interface SidebarProps {
           />
           {isExpanded && <Text style={[styles.navText, { color: "red" }]}>Logout</Text>}
         </TouchableOpacity>
-
-        {/* Expand / Collapse */}
-        {/* <TouchableOpacity style={styles.toggleButton} onPress={toggleSidebar}>
-          {isExpanded ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-        </TouchableOpacity> */}
       </View>
     </View>
   );

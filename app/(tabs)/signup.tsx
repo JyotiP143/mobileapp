@@ -1,6 +1,7 @@
 "use client";
 
 import { useUser } from "@/context/UserContext";
+import { storeToken } from "@/utils/authToken";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -145,6 +146,7 @@ const SignUpScreen = () => {
         text2: data.message,
         position: "top",
       });
+      storeToken(formData.email)
         fetchUserData();
         router.push("/main");
       } else {

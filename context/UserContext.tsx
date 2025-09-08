@@ -90,25 +90,11 @@ const fetchUserData = async () => {
       setUserData(initialData);
       return;
     }
-const response = await fetch("https://finance.evoxcel.com/api/auth/session", {
-  method: "GET",
-  credentials: "include", // 👈 important for cookies
-  headers: {
-    Authorization: `Bearer ${token}`, 
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  },
+const response = await fetch("https://finance.evoxcel.com/api/auth/session/mobile", {
+  method: "POST",
+  headers: { "Content-Type": "application/json"},
+   body: JSON.stringify({email: token }),
 });
-
-    // const response = await fetch("https://finance.evoxcel.com/api/auth/session", {
-    //   method: "GET",
-    //   credentials: "include",
-    //   headers: {
-    //     Authorization: `Bearer ${token}`, // ⬅ sending token manually
-    //     Accept: "application/json",
-    //     "Content-Type": "application/json",
-    //   },
-    // });
 
     if (!response.ok) {
       console.log("Failed to fetch user data. Status:", response.status);
@@ -117,17 +103,17 @@ const response = await fetch("https://finance.evoxcel.com/api/auth/session", {
     }
 
     const data = await response.json();
-console.log("hiiihiihih----",response)
-    if (data?.success && data?.user) {
+console.log("hiiihiihih----",data)
+    if (data?.success && data?.userDetails) {
       setUserData({
-        id: data.user.id ?? null,
-        email: data.user.email ?? null,
-        name: data.user.name ?? null,
-        companyName: data.user.companyName ?? null,
-        phone: data.user.phone ?? null,
-        joinDate: data.user.joinDate ?? null,
-        location: data.user.location ?? null,
-        filter: data.user.filter ?? "all",
+        id: data.userDetails.id ?? null,
+        email: data.userDetails.email ?? null,
+        name: data.userDetails.name ?? null,
+        companyName: data.userDetails.companyName ?? null,
+        phone: data.userDetails.phone ?? null,
+        joinDate: data.userDetails.joinDate ?? null,
+        location: data.userDetails.location ?? null,
+        filter: data.userDetails.filter ?? "all",
       });
     } else {
       setUserData(initialData);

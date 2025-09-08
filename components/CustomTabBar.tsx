@@ -1,6 +1,8 @@
+import { useUser } from "@/context/UserContext";
 import { Ionicons } from "@expo/vector-icons";
 import { usePathname, useRouter } from "expo-router";
 import React, { useState } from "react";
+
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 type IoniconName = keyof typeof Ionicons.glyphMap;
 const tabs = [
@@ -9,8 +11,6 @@ const tabs = [
   { name: "Loans", route: "/main/loans", icon: "cash-outline", activeIcon: "cash" },
   { name: "Members", route: "/main/members", icon: "people-outline", activeIcon: "people" },
   { name: "Withdraw", route: "/main/withdraw", icon: "wallet-outline", activeIcon: "wallet" },
-  // { name: "Profile", route: "/main/profile", icon: "person-circle-outline", activeIcon: "person-circle" },
-  // { name: "Logout", route: "/main/logout", icon: "log-out-outline", activeIcon: "log-out" },
 ];
 const moreTabs : { name: string; route: string; icon: IoniconName }[] = [
   { name: "Profile", route: "/main/profile", icon: "person-circle-outline" },
@@ -19,6 +19,7 @@ const moreTabs : { name: string; route: string; icon: IoniconName }[] = [
 
 
  const CustomTabBar = () => {
+   const { logoutUser } = useUser();
   const router = useRouter();
   const pathname = usePathname();
   const [moreVisible, setMoreVisible] = useState(false);
@@ -73,9 +74,13 @@ const moreTabs : { name: string; route: string; icon: IoniconName }[] = [
               <TouchableOpacity
                 key={tab.route}
                 style={styles.moreItem}
-                onPress={() => {
+               onPress={() => {
                   setMoreVisible(false);
-                  router.push(tab.route as `/main/profile` | `/main/logout`);
+                  if (tab.name === "Logout") {
+                    logoutUser(); 
+                  } else {
+                    router.push(tab.route as "/main/profile");
+                  }
                 }}
               >
                <Ionicons name={tab.icon as keyof typeof Ionicons.glyphMap} size={20} color="#3b82f6" />

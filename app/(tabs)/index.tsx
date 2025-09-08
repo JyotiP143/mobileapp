@@ -1,6 +1,7 @@
 "use client";
 import OTPVerificationModal from "@/components/model/otpVerificationMode";
 import { useUser } from "@/context/UserContext";
+import { storeToken } from "@/utils/authToken";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -90,8 +91,9 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
           text2: "Logged in successfully!",
           position: "top",
         });
-        router.push("/main");
+        storeToken(loginData.email)
         fetchUserData();
+        router.push("/main");
       } else if (response?.status === 403) {
         toast.warn(response?.message || "Please verify your email!", {
           position: "top-center",
