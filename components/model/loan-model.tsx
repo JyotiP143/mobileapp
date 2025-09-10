@@ -266,7 +266,6 @@ console.log("ownerid.." ,ownerid ,ownerid)
       });
     } else {
       const response = await addLoanDetails(payload);
-
       if (response.success) {
         setLoanData((prevLoans) =>
           Array.isArray(prevLoans) ? [...prevLoans, response.data] : [response.data]

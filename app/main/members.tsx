@@ -468,7 +468,7 @@ return Object.entries(result).map(([customerId, data]: [string, any]) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0f172a",
+    backgroundColor: "#43434eff",
   },
   background: {
     flex: 1,
