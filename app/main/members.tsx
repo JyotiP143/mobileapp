@@ -472,6 +472,9 @@ const styles = StyleSheet.create({
   },
   background: {
     flex: 1,
+    height: "100%",
+    marginTop :-30,
+    marginBottom :-50,
   },
   header: {
     flexDirection: "row",

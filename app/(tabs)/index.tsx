@@ -128,38 +128,7 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
       setIsLoading(false);
     }
   };
-
-  // const handleSendOTP = async () => {
-  //   try {
-  //     // Replace with your actual OTP sending logic
-  //     const response = await fetch("/api/auth/sendOTP", {
-  //       method: "PUT",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ email: loginData.email }),
-  //     })
-
-  //     const data = await response.json()
-
-  //     if (data.success) {
-  //       setShowOTPModal(true)
-  //       Toast.show({
-  //         type: "success",
-  //         text1: "OTP Sent",
-  //         text2: "OTP sent successfully!",
-  //         position: "top",
-  //       })
-  //     }
-  //   } catch (error) {
-  //     Toast.show({
-  //       type: "error",
-  //       text1: "Error",
-  //       text2: "Failed to send OTP",
-  //       position: "top",
-  //     })
-  //   }
-  // }
-
-  const handleSendOTP = async () => {
+const handleSendOTP = async () => {
  
     if (!loginData.email) {
       Toast.show({

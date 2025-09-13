@@ -16,7 +16,7 @@ import { MaterialIcons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
-import type React from "react"
+// import type React from "react"
 import { useEffect, useState } from "react"
 import {
   ActivityIndicator,
@@ -123,6 +123,7 @@ const WithdrawalApp: React.FC = () => {
     totalInterest +
     totalPaidAmount
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const filteredWithdrawals =
     investments?.filter((withdrawal: Withdrawal) => {
       const matchesSearch = withdrawal.remark.toLowerCase().includes(searchTerm.toLowerCase())
@@ -332,7 +333,7 @@ console.log("editFormData.wid....",editFormData.wid)
     }, 2000)
   }
 
-  const WithdrawalCard: React.FC<{ withdrawal: Withdrawal; index: number }> = ({ withdrawal, index }) => (
+  const WithdrawalCard: React.FC<{ withdrawal: Withdrawal; index: number }> = ({ withdrawal, index }:any) => (
     <View style={styles.cardContainer}>
       <LinearGradient colors={["rgba(97, 68, 239, 0.1)", "rgba(38, 74, 220, 0.1)"]} style={styles.card}>
         <View style={styles.cardHeader}>
@@ -588,7 +589,7 @@ console.log("editFormData.wid....",editFormData.wid)
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#2a0f0fff" />
-      <LinearGradient colors={["#0f172a", "#1e293b"]} style={styles.background}>
+      <LinearGradient colors={["#0f172a", "#1e293b"]} style={styles.backgroundasd}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -708,11 +709,12 @@ console.log("editFormData.wid....",editFormData.wid)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor: "#8dd23dff",
   },
-  background: {
-    height: 100,
+  backgroundasd: {
     flex: 1,
+    height: "100%",
+    marginTop :-30,
+    marginBottom :-50,
   },
   header: {
     flexDirection: "row",

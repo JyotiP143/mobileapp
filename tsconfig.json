@@ -2,8 +2,8 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "jsx": "react-native",            // ✅ Add this
-    "lib": ["dom", "esnext"],         // ✅ Add this
+    "jsx": "react-native",
+    "lib": ["dom", "esnext"],
     "paths": {
       "@/*": ["./*"]
     }
