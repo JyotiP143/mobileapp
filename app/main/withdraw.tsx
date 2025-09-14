@@ -588,7 +588,7 @@ console.log("editFormData.wid....",editFormData.wid)
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#2a0f0fff" />
+     <StatusBar barStyle="light-content" backgroundColor="#0f172a" />
       <LinearGradient colors={["#0f172a", "#1e293b"]} style={styles.backgroundasd}>
         {/* Header */}
         <View style={styles.header}>

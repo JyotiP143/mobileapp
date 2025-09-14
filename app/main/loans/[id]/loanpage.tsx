@@ -10,10 +10,10 @@ import { useUser } from "@/context/UserContext"
 import { Ionicons } from "@expo/vector-icons"
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
+import { useRouter } from "expo-router"
 import type React from "react"
 import { useEffect, useState } from "react"
 import { Dimensions, FlatList, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
-
 const { width } = Dimensions.get("window")
 
 type RootStackParamList = {
@@ -41,7 +41,7 @@ const LoanDetailsScreen: React.FC<Props> = () => {
   const [penaltyAmount, setPenaltyAmount] = useState("0")
   const [selectedLoan, setSelectedLoan] = useState("")
   const [activeTab, setActiveTab] = useState("schedule")
-
+ const router = useRouter();
   useEffect(() => {
     if (!loanisLoading && loanData.length > 0) {
       const firstLoan = loanData.find((loan: any) => loan._id === decodedId)
@@ -170,8 +170,10 @@ const userLoanData = loanData.filter(
       </TouchableOpacity>
     )
   }
+   
 
   return (
+    
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>

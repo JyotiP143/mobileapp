@@ -2,7 +2,13 @@ import { updateProfile } from "@/axios/profile";
 import AddLoanModal from "@/components/model/loan-model";
 import { useUser } from "@/context/UserContext";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import type { StackNavigationProp } from "@react-navigation/stack";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+
+
+
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
@@ -24,6 +30,15 @@ const formatDate = (dateString: string) => {
     year: "numeric",
   });
 };
+type RootStackParamList = {
+  LoanDetails: { id: string }; // ✅ NEW
+  Loans: undefined;           // ✅ NEW
+};
+
+type LoanDetailsScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  "Loans"
+>;
 
 const CardView = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,7 +70,7 @@ const CardView = () => {
       Alert.alert("Error", "Failed to update filter preference");
     }
   };
-
+const router = useRouter();
   const filteredLoans = useMemo(() => {
     return (
       loanData?.filter((loan) => {
@@ -140,8 +155,9 @@ const CardView = () => {
       },
       0
     );
-
+const navigation = useNavigation<LoanDetailsScreenNavigationProp>();
     return (
+      
       <View style={styles.cardContainer}>
         <LinearGradient
           colors={["#1e40af", "#3b82f6", "#1e40af"]}
@@ -260,10 +276,16 @@ const CardView = () => {
               </Text>
             </View>
 
-            <TouchableOpacity style={styles.viewButton}>
-              <MaterialIcons name="visibility" size={16} color="#6366f1" />
-              <Text style={styles.viewButtonText}>View</Text>
-            </TouchableOpacity>
+           <TouchableOpacity
+  style={styles.viewButton}
+  onPress={() => {
+    const encodedId = btoa(loan._id);
+    router.push(`/main/loans/${encodedId}/loanpage`);
+  }}
+>
+  <MaterialIcons name="visibility" size={16} color="#6366f1" />
+  <Text style={styles.viewButtonText}>View</Text>
+</TouchableOpacity>
           </View>
         </LinearGradient>
       </View>

@@ -14,6 +14,7 @@ import {
   SafeAreaView
 } from "react-native-safe-area-context";
 import CustomTabBar from "../components/CustomTabBar";
+import { ImageProvider } from "./../context/ImageContext";
 import { UserProvider } from "./../context/UserContext";
 
 function LayoutWithInsets() {
@@ -49,9 +50,11 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <UserProvider>
         <InvestmentProvider>
+          <ImageProvider>
           <SafeAreaProvider>
             <LayoutWithInsets />
           </SafeAreaProvider>
+          </ImageProvider>
         </InvestmentProvider>
       </UserProvider>
     </ThemeProvider>
