@@ -199,117 +199,27 @@ const AddLoanModal: React.FC<AddLoanModalProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-//   const handleSubmit = async () => {
-//   setIsSubmitting(true);
-//   console.log("submit ....sbubmit..............................");
-
-//   // ✅ Step 1: Get ownerid from localStorage (or Context)
-//   const ownerid = localStorage.getItem("ownerid") || "";
-// console.log("ownerid.." ,ownerid ,ownerid)
-//   // ✅ Step 2: Safeguard → prevent empty ownerid
-//   if (!ownerid) {
-//     toast.error("Owner ID is missing. Please log in again.", {
-//       position: "top-center",
-//       autoClose: 2000,
-//     });
-//     setIsSubmitting(false);
-//     return;
-//   }
-
-//   // ✅ Step 3: Validate required fields
-//   const requiredFields = [
-//     "name",
-//     "customerId",
-//     "loanId",
-//     "phone",
-//     "loanAmount",
-//     "processingFee",
-//     "interest",
-//     "totalInstallment",
-//     "installmentAmount",
-//     "advancePayment",
-//     "approvalDate",
-//     "repaymentStartDate",
-//     "paymentMethod",
-//     "repaymentMethod",
-//   ];
-
-//   const missingFields = requiredFields.filter(
-//     (field) => !formData[field as keyof typeof formData]
-//   );
-
-//   if (missingFields.length > 0) {
-//     toast.error(
-//       `Please fill all required fields: ${missingFields.join(", ")}`,
-//       { position: "top-center", autoClose: 1500 }
-//     );
-//     setIsSubmitting(false);
-//     return;
-//   }
-
-//   // ✅ Step 4: Build payload with ownerid
-//   const payload = {
-//     ...formData,
-//     paymentMethod: formData.paymentMethod || "cash",
-//     owner: ownerid,
-//   };
-
-//   console.log("Owner ID:", ownerid);
-//   console.log("Payload being submitted:", payload);
-
-//   // ✅ Step 5: API call
-//   try {
-//     if (totalInvestAmount < formData.loanAmount) {
-//       toast.error("Investment amount is less than the loan amount...", {
-//         position: "top-center",
-//         autoClose: 2000,
-//       });
-//     } else {
-//       const response = await addLoanDetails(payload);
-//       if (response.success) {
-//         setLoanData((prevLoans) =>
-//           Array.isArray(prevLoans) ? [...prevLoans, response.data] : [response.data]
-//         );
-//         setFormData(intialData);
-//         toast.success("Loan added successfully!", {
-//           position: "top-center",
-//           autoClose: 2000,
-//         });
-//         onClose();
-//       } else {
-//         toast.error(response.message || "Failed to submit loan data", {
-//           position: "top-center",
-//           autoClose: 2000,
-//         });
-//       }
-//     }
-//   } catch (error) {
-//     console.error("Error submitting loan data:", error);
-//     toast.error("An unexpected error occurred", {
-//       position: "top-center",
-//       autoClose: 2000,
-//     });
-//   } finally {
-//     setIsSubmitting(false);
-//   }
-// };
-
-
-  const handleSubmit = async () => {
-  setIsSubmitting(true);
-  console.log("submit ....sbubmit..............................");
-  // ✅ Step 1: Get ownerid from localStorage (or Context)
-  const ownerid = localStorage.getItem("ownerid") || "";
-console.log("ownerid.." ,ownerid ,ownerid)
-  // ✅ Step 2: Safeguard → prevent empty ownerid
-  if (!ownerid) {
-    toast.error("Owner ID is missing. Please log in again.", {
-      position: "top-center",
-      autoClose: 2000,
-    });
-    setIsSubmitting(false);
+const handleSubmit = async () => {
+  if (isSubmitting) {
+    console.warn("Submit already in progress...");
     return;
   }
+
+  setIsSubmitting(true);
+  console.log("Starting loan submission...");
+
+  // ✅ Get ownerid from localStorage
+//   const ownerid = localStorage.getItem("ownerid") || "";
+//   console.log("Retrieved ownerid:", ownerid);
+
+//  if (!ownerid) {
+//   toast.error("Owner ID is missing. Please log in again.", {
+//     position: "top-center",
+//     autoClose: 2000,
+//   });
+//   setIsSubmitting(false);
+//   return;
+// }
   const requiredFields = [
     "name",
     "customerId",
@@ -334,58 +244,74 @@ console.log("ownerid.." ,ownerid ,ownerid)
   if (missingFields.length > 0) {
     toast.error(
       `Please fill all required fields: ${missingFields.join(", ")}`,
-      { position: "top-center", autoClose: 1500 }
+      {
+        position: "top-center",
+        autoClose: 1500,
+        theme: "light",
+       
+      }
     );
     setIsSubmitting(false);
     return;
   }
 
+  // ✅ Construct payload with owner ID
   const payload = {
     ...formData,
     paymentMethod: formData.paymentMethod || "cash",
     owner: ownerid,
-  
   };
-  console.log("  console.log(owner)",ownerid)
-  console.log("Payload being submitted:", payload);
+
+  console.log("Final payload:", payload);
 
   try {
+    // ✅ Business rule validation
     if (totalInvestAmount < formData.loanAmount) {
       toast.error("Investment amount is less than the loan amount...", {
         position: "top-center",
         autoClose: 2000,
+        theme: "light",
       });
+      return;
+    }
+console.log("jdoidoifpe[d.............")
+    // ✅ API Call
+    const response = await addLoanDetails(payload);
+console.log("jdoidoifpe[d")
+    if (response.success) {
+      setLoanData((prevLoans:any) =>
+        Array.isArray(prevLoans)
+          ? [...prevLoans, response.data]
+          : [response.data]
+      );
+      setFormData(intialData);
+      toast.success("Loan added successfully!", {
+        position: "top-center",
+        autoClose: 2000,
+        theme: "light",
+      });
+      onClose();
     } else {
-      const response = await addLoanDetails(payload); // ✅ fixed
-      if (response.success) {
-        setLoanData((prevLoans) =>
-          Array.isArray(prevLoans) ? [...prevLoans, response.data] : [response.data]
-        );
-        setFormData(intialData);
-        toast.success("Loan added successfully!", {
-          position: "top-center",
-          autoClose: 2000,
-        });
-        onClose();
-      } else {
-        toast.error("Failed to submit loan data", {
-          position: "top-center",
-          autoClose: 2000,
-        });
-      }
+      toast.error(response.message || "Failed to submit loan data", {
+        position: "top-center",
+        autoClose: 2000,
+        theme: "light",
+      });
     }
   } catch (error) {
     console.error("Error submitting loan data:", error);
     toast.error("An unexpected error occurred", {
       position: "top-center",
       autoClose: 2000,
+      theme: "light",
     });
   } finally {
     setIsSubmitting(false);
   }
 };
 
-  return (
+
+ return (
     <Modal
       visible={visible}
       animationType="slide"

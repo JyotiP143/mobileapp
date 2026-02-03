@@ -1,3 +1,477 @@
+// "use client"
+
+// import { Documents } from "@/components/loan/Documents"
+// import { GeneralInfo } from "@/components/loan/GeneralInfo"
+// import { PaymentHistory } from "@/components/loan/PaymentHistory"
+// import { PaymentSchedule } from "@/components/loan/PaymentSchedule"
+// import LoanDetailsSkeleton from "@/components/loan/skeleton/LoanDetailsSkeleton"
+// import { useImageContext } from "@/context/ImageContext"
+// import { useUser } from "@/context/UserContext"
+// import { Ionicons } from "@expo/vector-icons"
+// import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native"
+// import type { StackNavigationProp } from "@react-navigation/stack"
+// import { useRouter } from "expo-router"
+// import type React from "react"
+// import { useEffect, useState } from "react"
+// import { Dimensions, FlatList, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+// const { width } = Dimensions.get("window")
+
+// type RootStackParamList = {
+//   LoanDetails: { id: string }
+//   Loans: undefined
+// }
+
+// type LoanDetailsScreenRouteProp = RouteProp<RootStackParamList, "LoanDetails">
+// type LoanDetailsScreenNavigationProp = StackNavigationProp<RootStackParamList, "LoanDetails">
+
+// interface Props {
+//   route: LoanDetailsScreenRouteProp
+//   navigation: LoanDetailsScreenNavigationProp
+// }
+
+// const LoanDetailsScreen: React.FC<Props> = () => {
+//   const route = useRoute<LoanDetailsScreenRouteProp>()
+//   const navigation = useNavigation<LoanDetailsScreenNavigationProp>()
+//   const { id } = route.params
+//   const decodedId = atob(id)
+
+//   const { fetchImages } = useImageContext()
+//   const { setLoanData, loanData, loanisLoading } = useUser()
+//   const [initialLoanData, setInitialLoanData] = useState<any>(null)
+//   const [penaltyAmount, setPenaltyAmount] = useState("0")
+//   const [selectedLoan, setSelectedLoan] = useState("")
+//   const [activeTab, setActiveTab] = useState("schedule")
+//  const router = useRouter();
+//   useEffect(() => {
+//     if (!loanisLoading && loanData.length > 0) {
+//       const firstLoan = loanData.find((loan: any) => loan._id === decodedId)
+//       if (firstLoan) {
+//         fetchImages(firstLoan.customerId, firstLoan.owner)
+//         setInitialLoanData(firstLoan)
+//         setSelectedLoan(firstLoan.loanId)
+//         const total = firstLoan.emiHistory.reduce((total: number, item: any) => {
+//           return item.paidStatus === "Paid" ? total + Number.parseInt(item.amount, 10) : total
+//         }, 0)
+//         const OutstandingLoan = Number(firstLoan.loanAmount) - total
+//         setPenaltyAmount(OutstandingLoan.toString())
+//       }
+//     }
+//   }, [loanData, loanisLoading, decodedId])
+
+//   const totalPaidAmount = (loanID: string) => {
+//     const loan = loanData.find((item: any) => item.loanId === loanID)
+//     if (!loan) return 0
+
+//     const total = loan.emiHistory.reduce((total: number, item: any) => {
+//       return item.paidStatus === "Paid" ? total + Number.parseInt(item.amount, 10) : total
+//     }, 0)
+//     const OutstandingLoan = Number(loan.loanAmount) - total
+//     setPenaltyAmount(OutstandingLoan.toString())
+//     return total
+//   }
+
+//   const handleTheLoan = (loanID: string) => {
+//     const selectedLoan = loanData.find((item: any) => item.loanId === loanID)
+//     if (selectedLoan) {
+//       totalPaidAmount(loanID)
+//       setInitialLoanData(selectedLoan)
+//       setSelectedLoan(loanID)
+//     }
+//   }
+
+//   const totalAmount = () => {
+//     if (!initialLoanData) {
+//       return 0
+//     }
+
+//     const { repaymentMethod, totalInstallment, loanAmount, interest } = initialLoanData
+//     const parsedTotalInstallment = Number(totalInstallment)
+//     const parsedLoanAmount = Number(loanAmount)
+//     const parsedInterest = Number(interest) / 100
+
+//     let totalWithInterest = 0
+
+//     if (repaymentMethod === "daily") {
+//       totalWithInterest = parsedLoanAmount + parsedLoanAmount * parsedInterest * parsedTotalInstallment
+//     } else if (repaymentMethod === "weekly") {
+//       totalWithInterest = parsedLoanAmount + parsedLoanAmount * parsedInterest * parsedTotalInstallment
+//     } else if (repaymentMethod === "monthly") {
+//       totalWithInterest = parsedLoanAmount + parsedLoanAmount * parsedInterest * parsedTotalInstallment
+//     }
+
+//     const roundedTotal = Number.parseFloat(totalWithInterest.toFixed(2))
+//     return roundedTotal
+//   }
+
+//   if (loanisLoading || !initialLoanData) {
+//     return <LoanDetailsSkeleton />
+//   }
+
+//   const loanId = loanData.find((item: any) => item._id === decodedId)
+//   if (!loanId) {
+//   console.error("Loan not found for decodedId:", decodedId);
+//   return;
+// }
+
+// const userLoanData = loanData.filter(
+//   (item: any) => item.customerId === loanId.customerId
+// );
+
+//   const loanMethod =
+//     initialLoanData.repaymentMethod === "weekly"
+//       ? "Week"
+//       : initialLoanData.repaymentMethod === "daily"
+//         ? "Day"
+//         : "Month"
+
+//   const formatCurrency = (amount: number | string) => {
+//     return Number(amount).toLocaleString("en-IN")
+//   }
+
+//   const tabs = [
+//     { key: "general", title: "General Info" },
+//     { key: "schedule", title: "Payment Schedule" },
+//     { key: "history", title: "History" },
+//     { key: "documents", title: "Documents" },
+//   ]
+
+//   const renderTabContent = () => {
+//     switch (activeTab) {
+//       case "general":
+//         return <GeneralInfo loanData={initialLoanData} payLoanmethod={loanMethod} setLoanData={setLoanData} />
+//       case "schedule":
+//         return <PaymentSchedule loanData={initialLoanData} />
+//       case "history":
+//         return <PaymentHistory loanData={initialLoanData} />
+//       case "documents":
+//         return <Documents loanData={initialLoanData} />
+//       default:
+//         return <PaymentSchedule loanData={initialLoanData} />
+//     }
+//   }
+
+//   const renderLoanItem = ({ item }: { item: any }) => {
+//     const encodedId = btoa(item._id)
+//     const isSelected = selectedLoan === item.loanId
+
+//     return (
+//       <TouchableOpacity
+//         style={[styles.loanItem, isSelected && styles.selectedLoanItem]}
+//         onPress={() => {
+//           handleTheLoan(item.loanId)
+//           navigation.setParams({ id: encodedId })
+//         }}
+//       >
+//         <Text style={styles.loanId}>{item.loanId}</Text>
+//         <View style={styles.amountContainer}>
+//           <Text style={styles.rupeeSymbol}>₹</Text>
+//           <Text style={styles.amount}>{formatCurrency(item.loanAmount)}</Text>
+//         </View>
+//       </TouchableOpacity>
+//     )
+//   }
+   
+
+//   return (
+    
+//     <SafeAreaView style={styles.container}>
+//       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+//         <View style={styles.content}>
+//           {/* Header Section */}
+//           <View style={styles.header}>
+//             <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("Loans")}>
+//               <Ionicons name="arrow-back" size={20} color="#374151" />
+//               <Text style={styles.backText}>Back to Loans</Text>
+//             </TouchableOpacity>
+
+//             <View style={styles.titleContainer}>
+//               <Text style={styles.customerName}>{initialLoanData.name}</Text>
+//               <View style={styles.loanIdBadge}>
+//                 <Text style={styles.loanIdBadgeText}>Loan ID: {initialLoanData.loanId}</Text>
+//               </View>
+//             </View>
+//           </View>
+
+//           <View style={styles.mainContent}>
+//             {/* Metrics Card */}
+//             <View style={styles.metricsCard}>
+//               <View style={styles.metricsGrid}>
+//                 {/* Total Loan Amount */}
+//                 <View style={[styles.metricItem, styles.loanAmountBg]}>
+//                   <Text style={styles.metricLabel}>Total Loan Amount</Text>
+//                   <View style={styles.metricValue}>
+//                     <Text style={styles.rupeeSymbol}>₹</Text>
+//                     <Text style={styles.metricAmount}>{formatCurrency(initialLoanData.loanAmount)}</Text>
+//                   </View>
+//                 </View>
+
+//                 {/* Total Repayment */}
+//                 <View style={[styles.metricItem, styles.repaymentBg]}>
+//                   <Text style={styles.metricLabel}>Total Repayment</Text>
+//                   <View style={styles.metricValue}>
+//                     <Text style={styles.rupeeSymbol}>₹</Text>
+//                     <Text style={styles.metricAmount}>{formatCurrency(totalAmount())}</Text>
+//                   </View>
+//                 </View>
+
+//                 {/* Outstanding Balance */}
+//                 <View style={[styles.metricItem, styles.outstandingBg]}>
+//                   <Text style={styles.metricLabel}>Outstanding Balance</Text>
+//                   <View style={styles.metricValue}>
+//                     <Text style={styles.rupeeSymbol}>₹</Text>
+//                     <Text style={styles.metricAmount}>{formatCurrency(penaltyAmount)}</Text>
+//                   </View>
+//                 </View>
+
+//                 {/* Loan Term */}
+//                 <View style={[styles.metricItem, styles.termBg]}>
+//                   <Text style={styles.metricLabel}>Loan Term</Text>
+//                   <Text style={styles.metricAmount}>
+//                     {initialLoanData.totalInstallment}{" "}
+//                     {initialLoanData.totalInstallment === 1 ? loanMethod : `${loanMethod}s`}
+//                   </Text>
+//                 </View>
+//               </View>
+//             </View>
+
+//             {/* Loans List Sidebar */}
+//             <View style={styles.loansListContainer}>
+//               <View style={styles.loansListHeader}>
+//                 <Text style={styles.loansListHeaderText}>LOAN ID</Text>
+//                 <Text style={styles.loansListHeaderText}>AMOUNT</Text>
+//               </View>
+//               <FlatList
+//                 data={userLoanData}
+//                 renderItem={renderLoanItem}
+//                 keyExtractor={(item) => item.loanId}
+//                 style={styles.loansList}
+//                 showsVerticalScrollIndicator={false}
+//               />
+//             </View>
+//           </View>
+
+//           {/* Tabs */}
+//           <View style={styles.tabsContainer}>
+//             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsList}>
+//               {tabs.map((tab) => (
+//                 <TouchableOpacity
+//                   key={tab.key}
+//                   style={[styles.tab, activeTab === tab.key && styles.activeTab]}
+//                   onPress={() => setActiveTab(tab.key)}
+//                 >
+//                   <Text style={[styles.tabText, activeTab === tab.key && styles.activeTabText]}>{tab.title}</Text>
+//                 </TouchableOpacity>
+//               ))}
+//             </ScrollView>
+
+//             {/* Tab Content */}
+//             <View style={styles.tabContent}>{renderTabContent()}</View>
+//           </View>
+//         </View>
+//       </ScrollView>
+//     </SafeAreaView>
+//   )
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: "#f8fafc",
+//   },
+//   scrollView: {
+//     flex: 1,
+//   },
+//   content: {
+//     padding: 16,
+//   },
+//   header: {
+//     marginBottom: 24,
+//   },
+//   backButton: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     backgroundColor: "#e5e7eb",
+//     paddingHorizontal: 12,
+//     paddingVertical: 8,
+//     borderRadius: 6,
+//     alignSelf: "flex-start",
+//     marginBottom: 16,
+//   },
+//   backText: {
+//     marginLeft: 8,
+//     fontSize: 14,
+//     fontWeight: "500",
+//     color: "#374151",
+//   },
+//   titleContainer: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     flexWrap: "wrap",
+//     gap: 12,
+//   },
+//   customerName: {
+//     fontSize: 24,
+//     fontWeight: "bold",
+//     color: "#1f2937",
+//     textTransform: "capitalize",
+//   },
+//   loanIdBadge: {
+//     backgroundColor: "#d1fae5",
+//     paddingHorizontal: 12,
+//     paddingVertical: 4,
+//     borderRadius: 6,
+//   },
+//   loanIdBadgeText: {
+//     color: "#065f46",
+//     fontSize: 14,
+//     fontWeight: "500",
+//   },
+//   mainContent: {
+//     flexDirection: "column",
+//     gap: 24,
+//     marginBottom: 24,
+//   },
+//   metricsCard: {
+//     backgroundColor: "#475569",
+//     borderRadius: 12,
+//     padding: 24,
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 4 },
+//     shadowOpacity: 0.1,
+//     shadowRadius: 8,
+//     elevation: 4,
+//   },
+//   metricsGrid: {
+//     flexDirection: "row",
+//     flexWrap: "wrap",
+//     gap: 16,
+//   },
+//   metricItem: {
+//     flex: 1,
+//     minWidth: (width - 80) / 2 - 8,
+//     borderRadius: 12,
+//     padding: 16,
+//   },
+//   loanAmountBg: {
+//     backgroundColor: "#f8fafc",
+//   },
+//   repaymentBg: {
+//     backgroundColor: "#dbeafe",
+//   },
+//   outstandingBg: {
+//     backgroundColor: "#fef3c7",
+//   },
+//   termBg: {
+//     backgroundColor: "#f3e8ff",
+//   },
+//   metricLabel: {
+//     color: "#6b7280",
+//     fontSize: 12,
+//     marginBottom: 8,
+//   },
+//   metricValue: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//   },
+//   rupeeSymbol: {
+//     fontSize: 18,
+//     fontWeight: "bold",
+//     color: "#111827",
+//     marginRight: 4,
+//   },
+//   metricAmount: {
+//     fontSize: 20,
+//     fontWeight: "bold",
+//     color: "#111827",
+//   },
+//   loansListContainer: {
+//     backgroundColor: "#ffffff",
+//     borderRadius: 12,
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.1,
+//     shadowRadius: 4,
+//     elevation: 2,
+//     overflow: "hidden",
+//   },
+//   loansListHeader: {
+//     flexDirection: "row",
+//     backgroundColor: "#f9fafb",
+//     paddingHorizontal: 16,
+//     paddingVertical: 12,
+//   },
+//   loansListHeaderText: {
+//     flex: 1,
+//     fontSize: 12,
+//     fontWeight: "500",
+//     color: "#6b7280",
+//   },
+//   loansList: {
+//     maxHeight: 300,
+//   },
+//   loanItem: {
+//     flexDirection: "row",
+//     paddingHorizontal: 16,
+//     paddingVertical: 12,
+//     borderLeftWidth: 4,
+//     borderLeftColor: "transparent",
+//   },
+//   selectedLoanItem: {
+//     backgroundColor: "#dbeafe",
+//     borderLeftColor: "#3b82f6",
+//   },
+//   loanId: {
+//     flex: 1,
+//     fontWeight: "500",
+//     color: "#111827",
+//   },
+//   amountContainer: {
+//     flex: 1,
+//     flexDirection: "row",
+//     alignItems: "center",
+//   },
+//   amount: {
+//     fontWeight: "500",
+//     color: "#111827",
+//   },
+//   tabsContainer: {
+//     backgroundColor: "#ffffff",
+//     borderRadius: 12,
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.1,
+//     shadowRadius: 4,
+//     elevation: 2,
+//     overflow: "hidden",
+//   },
+//   tabsList: {
+//     backgroundColor: "#475569",
+//   },
+//   tab: {
+//     paddingHorizontal: 20,
+//     paddingVertical: 12,
+//     marginHorizontal: 4,
+//   },
+//   activeTab: {
+//     backgroundColor: "#64748b",
+//     borderRadius: 6,
+//     marginVertical: 4,
+//   },
+//   tabText: {
+//     color: "#ffffff",
+//     fontSize: 14,
+//     fontWeight: "500",
+//   },
+//   activeTabText: {
+//     color: "#ffffff",
+//     fontWeight: "600",
+//   },
+//   tabContent: {
+//     padding: 16,
+//   },
+// })
+
+// export default LoanDetailsScreen
 "use client"
 
 import { Documents } from "@/components/loan/Documents"
@@ -41,7 +515,8 @@ const LoanDetailsScreen: React.FC<Props> = () => {
   const [penaltyAmount, setPenaltyAmount] = useState("0")
   const [selectedLoan, setSelectedLoan] = useState("")
   const [activeTab, setActiveTab] = useState("schedule")
- const router = useRouter();
+  const router = useRouter()
+
   useEffect(() => {
     if (!loanisLoading && loanData.length > 0) {
       const firstLoan = loanData.find((loan: any) => loan._id === decodedId)
@@ -109,13 +584,11 @@ const LoanDetailsScreen: React.FC<Props> = () => {
 
   const loanId = loanData.find((item: any) => item._id === decodedId)
   if (!loanId) {
-  console.error("Loan not found for decodedId:", decodedId);
-  return;
-}
+    console.error("Loan not found for decodedId:", decodedId)
+    return
+  }
 
-const userLoanData = loanData.filter(
-  (item: any) => item.customerId === loanId.customerId
-);
+  const userLoanData = loanData.filter((item: any) => item.customerId === loanId.customerId)
 
   const loanMethod =
     initialLoanData.repaymentMethod === "weekly"
@@ -170,17 +643,15 @@ const userLoanData = loanData.filter(
       </TouchableOpacity>
     )
   }
-   
 
   return (
-    
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           {/* Header Section */}
           <View style={styles.header}>
             <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("Loans")}>
-              <Ionicons name="arrow-back" size={20} color="#374151" />
+              <Ionicons name="arrow-back" size={22} color="#1f2937" />
               <Text style={styles.backText}>Back to Loans</Text>
             </TouchableOpacity>
 
@@ -193,12 +664,14 @@ const userLoanData = loanData.filter(
           </View>
 
           <View style={styles.mainContent}>
-            {/* Metrics Card */}
             <View style={styles.metricsCard}>
               <View style={styles.metricsGrid}>
                 {/* Total Loan Amount */}
                 <View style={[styles.metricItem, styles.loanAmountBg]}>
-                  <Text style={styles.metricLabel}>Total Loan Amount</Text>
+                  <View style={styles.metricHeader}>
+                    <Ionicons name="cash-outline" size={20} color="#1f2937" />
+                    <Text style={styles.metricLabel}>Total Loan Amount</Text>
+                  </View>
                   <View style={styles.metricValue}>
                     <Text style={styles.rupeeSymbol}>₹</Text>
                     <Text style={styles.metricAmount}>{formatCurrency(initialLoanData.loanAmount)}</Text>
@@ -207,7 +680,10 @@ const userLoanData = loanData.filter(
 
                 {/* Total Repayment */}
                 <View style={[styles.metricItem, styles.repaymentBg]}>
-                  <Text style={styles.metricLabel}>Total Repayment</Text>
+                  <View style={styles.metricHeader}>
+                    <Ionicons name="trending-up-outline" size={20} color="#059669" />
+                    <Text style={styles.metricLabel}>Total Repayment</Text>
+                  </View>
                   <View style={styles.metricValue}>
                     <Text style={styles.rupeeSymbol}>₹</Text>
                     <Text style={styles.metricAmount}>{formatCurrency(totalAmount())}</Text>
@@ -216,7 +692,10 @@ const userLoanData = loanData.filter(
 
                 {/* Outstanding Balance */}
                 <View style={[styles.metricItem, styles.outstandingBg]}>
-                  <Text style={styles.metricLabel}>Outstanding Balance</Text>
+                  <View style={styles.metricHeader}>
+                    <Ionicons name="time-outline" size={20} color="#d97706" />
+                    <Text style={styles.metricLabel}>Outstanding Balance</Text>
+                  </View>
                   <View style={styles.metricValue}>
                     <Text style={styles.rupeeSymbol}>₹</Text>
                     <Text style={styles.metricAmount}>{formatCurrency(penaltyAmount)}</Text>
@@ -225,7 +704,10 @@ const userLoanData = loanData.filter(
 
                 {/* Loan Term */}
                 <View style={[styles.metricItem, styles.termBg]}>
-                  <Text style={styles.metricLabel}>Loan Term</Text>
+                  <View style={styles.metricHeader}>
+                    <Ionicons name="calendar-outline" size={20} color="#8b5cf6" />
+                    <Text style={styles.metricLabel}>Loan Term</Text>
+                  </View>
                   <Text style={styles.metricAmount}>
                     {initialLoanData.totalInstallment}{" "}
                     {initialLoanData.totalInstallment === 1 ? loanMethod : `${loanMethod}s`}
@@ -234,7 +716,6 @@ const userLoanData = loanData.filter(
               </View>
             </View>
 
-            {/* Loans List Sidebar */}
             <View style={styles.loansListContainer}>
               <View style={styles.loansListHeader}>
                 <Text style={styles.loansListHeaderText}>LOAN ID</Text>
@@ -250,7 +731,6 @@ const userLoanData = loanData.filter(
             </View>
           </View>
 
-          {/* Tabs */}
           <View style={styles.tabsContainer}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsList}>
               {tabs.map((tab) => (
@@ -276,70 +756,80 @@ const userLoanData = loanData.filter(
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#ffffff", // Clean white background
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: 16,
+    padding: 20, // Increased padding for better spacing
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 32, // Increased margin for better spacing
   },
   backButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#e5e7eb",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
+    backgroundColor: "#f1f5f9", // Softer background color
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12, // More rounded corners
     alignSelf: "flex-start",
-    marginBottom: 16,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   backText: {
     marginLeft: 8,
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#374151",
+    fontSize: 15, // Slightly larger font
+    fontWeight: "600", // Bolder weight
+    color: "#1f2937",
   },
   titleContainer: {
     flexDirection: "row",
     alignItems: "center",
     flexWrap: "wrap",
-    gap: 12,
+    gap: 16, // Increased gap
   },
   customerName: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 28, // Larger, more prominent title
+    fontWeight: "700", // Bolder weight
     color: "#1f2937",
     textTransform: "capitalize",
+    letterSpacing: -0.5, // Tighter letter spacing for modern look
   },
   loanIdBadge: {
-    backgroundColor: "#d1fae5",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 6,
+    backgroundColor: "#dcfce7", // Softer green background
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20, // More rounded pill shape
+    borderWidth: 1,
+    borderColor: "#bbf7d0",
   },
   loanIdBadgeText: {
-    color: "#065f46",
+    color: "#059669", // Darker green for better contrast
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   mainContent: {
     flexDirection: "column",
     gap: 24,
-    marginBottom: 24,
+    marginBottom: 32, // Increased margin
   },
   metricsCard: {
-    backgroundColor: "#475569",
-    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    borderRadius: 20, // More rounded corners
     padding: 24,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 }, // Deeper shadow
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: "#f1f5f9", // Subtle border
   },
   metricsGrid: {
     flexDirection: "row",
@@ -349,81 +839,109 @@ const styles = StyleSheet.create({
   metricItem: {
     flex: 1,
     minWidth: (width - 80) / 2 - 8,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16, // More rounded corners
+    padding: 20, // Increased padding
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
   loanAmountBg: {
     backgroundColor: "#f8fafc",
+    borderLeftWidth: 4,
+    borderLeftColor: "#1f2937",
   },
   repaymentBg: {
-    backgroundColor: "#dbeafe",
+    backgroundColor: "#ecfdf5",
+    borderLeftWidth: 4,
+    borderLeftColor: "#059669",
   },
   outstandingBg: {
-    backgroundColor: "#fef3c7",
+    backgroundColor: "#fffbeb",
+    borderLeftWidth: 4,
+    borderLeftColor: "#d97706",
   },
   termBg: {
-    backgroundColor: "#f3e8ff",
+    backgroundColor: "#faf5ff",
+    borderLeftWidth: 4,
+    borderLeftColor: "#8b5cf6",
+  },
+  metricHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
   },
   metricLabel: {
     color: "#6b7280",
-    fontSize: 12,
-    marginBottom: 8,
+    fontSize: 13, // Slightly larger
+    fontWeight: "500",
+    marginLeft: 8,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   metricValue: {
     flexDirection: "row",
     alignItems: "center",
   },
   rupeeSymbol: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#111827",
+    fontSize: 20, // Larger symbol
+    fontWeight: "700",
+    color: "#1f2937",
     marginRight: 4,
   },
   metricAmount: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#111827",
+    fontSize: 22, // Larger amount
+    fontWeight: "700", // Bolder weight
+    color: "#1f2937",
+    letterSpacing: -0.5,
   },
   loansListContainer: {
     backgroundColor: "#ffffff",
-    borderRadius: 12,
+    borderRadius: 16, // More rounded corners
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
   },
   loansListHeader: {
     flexDirection: "row",
-    backgroundColor: "#f9fafb",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    backgroundColor: "#f8fafc", // Softer header background
+    paddingHorizontal: 20,
+    paddingVertical: 16, // Increased padding
   },
   loansListHeaderText: {
     flex: 1,
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: 13,
+    fontWeight: "600", // Bolder weight
     color: "#6b7280",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   loansList: {
     maxHeight: 300,
   },
   loanItem: {
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16, // Increased padding
     borderLeftWidth: 4,
     borderLeftColor: "transparent",
+    backgroundColor: "#ffffff",
   },
   selectedLoanItem: {
-    backgroundColor: "#dbeafe",
-    borderLeftColor: "#3b82f6",
+    backgroundColor: "#f0f9ff", // Softer blue background
+    borderLeftColor: "#0ea5e9", // Brighter blue accent
   },
   loanId: {
     flex: 1,
-    fontWeight: "500",
-    color: "#111827",
+    fontWeight: "600", // Bolder weight
+    color: "#1f2937",
+    fontSize: 15,
   },
   amountContainer: {
     flex: 1,
@@ -431,43 +949,52 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   amount: {
-    fontWeight: "500",
-    color: "#111827",
+    fontWeight: "600", // Bolder weight
+    color: "#1f2937",
+    fontSize: 15,
   },
   tabsContainer: {
     backgroundColor: "#ffffff",
-    borderRadius: 12,
+    borderRadius: 16, // More rounded corners
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
   },
   tabsList: {
-    backgroundColor: "#475569",
+    backgroundColor: "#1f2937", // Modern dark background
+    paddingVertical: 8,
   },
   tab: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 24, // Increased padding
+    paddingVertical: 16,
     marginHorizontal: 4,
+    borderRadius: 12,
   },
   activeTab: {
-    backgroundColor: "#64748b",
-    borderRadius: 6,
+    backgroundColor: "#8b5cf6", // Purple accent color
     marginVertical: 4,
+    shadowColor: "#8b5cf6",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   tabText: {
-    color: "#ffffff",
-    fontSize: 14,
+    color: "#d1d5db", // Lighter inactive text
+    fontSize: 15, // Slightly larger
     fontWeight: "500",
   },
   activeTabText: {
     color: "#ffffff",
-    fontWeight: "600",
+    fontWeight: "700", // Bolder active text
   },
   tabContent: {
-    padding: 16,
+    padding: 20, // Increased padding
   },
 })
 
